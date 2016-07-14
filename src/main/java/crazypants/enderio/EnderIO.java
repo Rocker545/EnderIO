@@ -30,6 +30,7 @@ import crazypants.enderio.conduit.item.filter.ItemExistingItemFilter;
 import crazypants.enderio.conduit.item.filter.ItemModItemFilter;
 import crazypants.enderio.conduit.item.filter.ItemPowerItemFilter;
 import crazypants.enderio.conduit.liquid.ItemLiquidConduit;
+import crazypants.enderio.conduit.oc.ItemOCConduit;
 import crazypants.enderio.conduit.power.ItemPowerConduit;
 import crazypants.enderio.conduit.redstone.InsulatedRedstoneConduit;
 import crazypants.enderio.conduit.redstone.ItemRedstoneConduit;
@@ -63,6 +64,7 @@ import crazypants.enderio.machine.generator.combustion.BlockCombustionGenerator;
 import crazypants.enderio.machine.generator.stirling.BlockStirlingGenerator;
 import crazypants.enderio.machine.generator.zombie.BlockZombieGenerator;
 import crazypants.enderio.machine.invpanel.BlockInventoryPanel;
+import crazypants.enderio.machine.invpanel.remote.ItemRemoteInvAccess;
 import crazypants.enderio.machine.killera.BlockKillerJoe;
 import crazypants.enderio.machine.light.BlockElectricLight;
 import crazypants.enderio.machine.light.BlockLightNode;
@@ -80,6 +82,7 @@ import crazypants.enderio.machine.painter.blocks.BlockPaintedFence;
 import crazypants.enderio.machine.painter.blocks.BlockPaintedFenceGate;
 import crazypants.enderio.machine.painter.blocks.BlockPaintedGlowstone;
 import crazypants.enderio.machine.painter.blocks.BlockPaintedPressurePlate;
+import crazypants.enderio.machine.painter.blocks.BlockPaintedRedstone;
 import crazypants.enderio.machine.painter.blocks.BlockPaintedSlab;
 import crazypants.enderio.machine.painter.blocks.BlockPaintedStairs;
 import crazypants.enderio.machine.painter.blocks.BlockPaintedWall;
@@ -209,6 +212,7 @@ public class EnderIO {
   public static ItemPowerConduit itemPowerConduit;
   public static ItemLiquidConduit itemLiquidConduit;
   public static ItemItemConduit itemItemConduit;
+  public static ItemOCConduit itemOCConduit;
 
   public static ItemBasicItemFilter itemBasicFilterUpgrade;
   public static ItemExistingItemFilter itemExistingItemFilter;
@@ -272,6 +276,7 @@ public class EnderIO {
   public static ItemFrankenSkull itemFrankenSkull;
 
   public static BlockVacuumChest blockVacuumChest;
+  public static ItemRemoteInvAccess itemRemoteInvAccess;
 
   @EventHandler
   public void preInit(FMLPreInitializationEvent event) {
@@ -306,6 +311,7 @@ public class EnderIO {
     blockPaintedStair = BlockPaintedStairs.create();
     blockPaintedSlab = BlockPaintedSlab.create();
     blockPaintedGlowstone = BlockPaintedGlowstone.create();
+    BlockPaintedRedstone.create();
     blockPaintedCarpet = BlockPaintedCarpet.create();
     blockPaintedPressurePlate = BlockPaintedPressurePlate.create();
 
@@ -356,7 +362,7 @@ public class EnderIO {
     blockReinforcedObsidian = BlockReinforcedObsidian.create();
 
     blockFusedQuartz = BlockFusedQuartz.create();
-    // BlockColoredFusedQuartz.create();
+    BlockColoredFusedQuartz.create();
     BlockPaintedFusedQuartz.create();
 
     // blockEnderRail = BlockEnderRail.create();
@@ -374,6 +380,7 @@ public class EnderIO {
     itemPowerConduit = ItemPowerConduit.create();
     itemLiquidConduit = ItemLiquidConduit.create();
     itemItemConduit = ItemItemConduit.create();
+    itemOCConduit = ItemOCConduit.create();
 
     itemBasicFilterUpgrade = ItemBasicItemFilter.create();
     itemExistingItemFilter = ItemExistingItemFilter.create();
@@ -406,6 +413,8 @@ public class EnderIO {
     itemEnderFood = ItemEnderFood.create();
 
     blockGauge = BlockGauge.create();
+
+    itemRemoteInvAccess = ItemRemoteInvAccess.create();
 
     DarkSteelItems.createDarkSteelArmorItems();
     DarkSteelController.instance.register();

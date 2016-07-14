@@ -11,7 +11,7 @@ import crazypants.enderio.machine.farm.farmers.OredictTreeFarmer;
 import crazypants.enderio.machine.farm.farmers.PickableFarmer;
 import crazypants.enderio.machine.farm.farmers.PlantableFarmer;
 import crazypants.enderio.machine.farm.farmers.RubberTreeFarmer;
-import crazypants.enderio.machine.farm.farmers.RubberTreeFarmerIC2;
+import crazypants.enderio.machine.farm.farmers.RubberTreeFarmerIC2exp;
 import crazypants.enderio.machine.farm.farmers.RubberTreeFarmerTechReborn;
 import crazypants.enderio.machine.farm.farmers.StemFarmer;
 import crazypants.enderio.machine.farm.farmers.TreeFarmer;
@@ -27,7 +27,8 @@ public final class FarmersRegistry {
 
   private static final Things SAPLINGS = new Things("treeSapling");
   private static final Things WOODS = new Things("logWood", "blockSlimeCongealed");
-  private static final Things FLOWERS = new Things("block:BiomesOPlenty:flowers", "block:BiomesOPlenty:flowers2", "block:Botany:flower", "block:Botania:flower")
+  private static final Things FLOWERS = new Things("block:BiomesOPlenty:flowers", "block:BiomesOPlenty:flowers2", "block:Botany:flower", "block:botania:flower",
+      "block:botania:doubleFlower1", "block:botania:doubleFlower2", "block:botania:shinyFlower", "block:botania:mushroom")
       .add(Blocks.YELLOW_FLOWER).add(Blocks.RED_FLOWER);
 
   public static final PlantableFarmer DEFAULT_FARMER = new PlantableFarmer();
@@ -144,9 +145,14 @@ public final class FarmersRegistry {
   }
 
   private static void addIC2() {
-    RubberTreeFarmerIC2 rtf = new RubberTreeFarmerIC2();
-    if(rtf.isValid()) {
-      FarmersCommune.joinCommune(rtf);
+    // classic's not yet available for >1.7. wait for it before throwing away the old stuff
+    // RubberTreeFarmerIC2 rtf = new RubberTreeFarmerIC2();
+    // if(rtf.isValid()) {
+    // FarmersCommune.joinCommune(rtf);
+    // }
+    RubberTreeFarmer farmer = RubberTreeFarmerIC2exp.create();
+    if (farmer != null) {
+      FarmersCommune.joinCommune(farmer);
     }
   }
 

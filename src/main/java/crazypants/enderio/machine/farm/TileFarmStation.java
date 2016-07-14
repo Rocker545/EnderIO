@@ -1,9 +1,13 @@
 package crazypants.enderio.machine.farm;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import javax.annotation.Nonnull;
 
 import com.enderio.core.common.util.BlockCoord;
 
+import cofh.api.energy.IEnergyContainerItem;
 import crazypants.enderio.EnderIO;
 import crazypants.enderio.ModObject;
 import crazypants.enderio.config.Config;
@@ -46,6 +50,7 @@ import static crazypants.enderio.capacitor.CapacitorKey.FARM_POWER_INTAKE;
 import static crazypants.enderio.capacitor.CapacitorKey.FARM_POWER_USE;
 import static crazypants.enderio.capacitor.CapacitorKey.FARM_STACK_LIMIT;
 import static crazypants.enderio.capacitor.DefaultCapacitorData.BASIC_CAPACITOR;
+import static crazypants.enderio.config.Config.farmEvictEmptyRFTools;
 import static crazypants.enderio.config.Config.farmStopOnNoOutputSlots;
 
 @Storable
@@ -120,10 +125,6 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
     }
   }
 
-  public static final String NOTIFICATION_NO_HOE = "noHoe";
-  public static final String NOTIFICATION_NO_AXE = "noAxe";
-  public static final String NOTIFICATION_NO_SEEDS = "noSeeds";
-
   private BlockPos lastScanned;
   private EntityPlayerMP farmerJoe;
 
@@ -145,7 +146,7 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
   @Store
   private int lockedSlots = 0x00;
 
-  public String notification = "";
+  public Set<FarmNotification> notification = EnumSet.noneOf(FarmNotification.class);
   public boolean sendNotification = false;
 
   private boolean wasActive;
@@ -176,7 +177,7 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
     Block dirtBlock = getBlock(dirtLoc);
     if((dirtBlock == Blocks.DIRT || dirtBlock == Blocks.GRASS)) {
       if(!hasHoe()) {
-        setNotification(NOTIFICATION_NO_HOE);
+        setNotification(FarmNotification.NO_HOE);
         return false;
       }
       damageHoe(1, dirtLoc);
@@ -240,9 +241,15 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
     return getTool(type) != null;
   }
 
-  private ItemStack getTool(ToolType type) {
+  private boolean isDryRfTool(ItemStack stack) {
+    return farmEvictEmptyRFTools && stack != null && stack.getItem() instanceof IEnergyContainerItem
+        && ((IEnergyContainerItem) stack.getItem()).getEnergyStored(stack) <= 0
+        && ((IEnergyContainerItem) stack.getItem()).getMaxEnergyStored(stack) > 0;
+  }
+
+  public ItemStack getTool(ToolType type) {
     for (int i = minToolSlot; i <= maxToolSlot; i++) {
-      if (ToolType.isBrokenTinkerTool(inventory[i])) {
+      if (ToolType.isBrokenTinkerTool(inventory[i]) || isDryRfTool(inventory[i])) {
         for (int j = slotDefinition.minOutputSlot; j <= slotDefinition.maxOutputSlot; j++) {
           if (inventory[j] == null) {
             inventory[j] = inventory[i];
@@ -252,6 +259,19 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
           }
         }
       } else if (type.itemMatches(inventory[i]) && inventory[i].stackSize > 0) {
+        switch (type) {
+        case AXE:
+          removeNotification(FarmNotification.NO_AXE);
+          break;
+        case HOE:
+          removeNotification(FarmNotification.NO_HOE);
+          break;
+        case TREETAP:
+          removeNotification(FarmNotification.NO_TREETAP);
+          break;
+        default:
+          break;
+        }
         return inventory[i];
       }
     }
@@ -337,23 +357,28 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
     return block.isAir(bs, worldObj, bc) || block.isReplaceable(worldObj, bc);
   }
 
-  public void setNotification(String unloc) {
-    String newNote = EnderIO.lang.localize("farm.note." + unloc);
-    if(!newNote.equals(notification)) {
-      notification = newNote;
+  public void setNotification(FarmNotification note) {
+    if (!notification.contains(note)) {
+      notification.add(note);
+      sendNotification = true;
+    }
+  }
+
+  public void removeNotification(FarmNotification note) {
+    if (notification.remove(note)) {
       sendNotification = true;
     }
   }
 
   public void clearNotification() {
     if(hasNotification()) {
-      notification = "";
+      notification.clear();
       sendNotification = true;
     }
   }
 
   public boolean hasNotification() {
-    return !"".equals(notification);
+    return !notification.isEmpty();
   }
 
   private void sendNotification() {
@@ -395,6 +420,9 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
 
   @Override
   protected boolean checkProgress(boolean redstoneChecksPassed) {
+    if (shouldDoWorkThisTick(6 * 60 * 20)) {
+      clearNotification();
+    }
     if(redstoneChecksPassed) {
       usePower();
       if(canTick(redstoneChecksPassed)) {
@@ -409,7 +437,7 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
       return false;
     }
     if(getEnergyStored() < getPowerUsePerTick()) {
-      setNotification("noPower");
+      setNotification(FarmNotification.NO_POWER);
       return false;
     }
     return true;
@@ -423,12 +451,10 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
     }
 
     if(!hasPower() && Config.farmActionEnergyUseRF > 0 && Config.farmAxeActionEnergyUseRF > 0) {
-      setNotification("noPower");
+      setNotification(FarmNotification.NO_POWER);
       return;
     }
-    if(EnderIO.lang.localize("farm.note.noPower").equals(notification)) {
-      clearNotification();
-    }
+    removeNotification(FarmNotification.NO_POWER);
 
     BlockPos bc = null;
     int infiniteLoop = 20;
@@ -453,12 +479,13 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
     }
 
     if(isOutputFull()) {
-      setNotification("outputFull");
+      setNotification(FarmNotification.OUTPUT_FULL);
       return;
     }
+    removeNotification(FarmNotification.OUTPUT_FULL);
 
     if(!hasPower() && Config.farmActionEnergyUseRF > 0 && Config.farmAxeActionEnergyUseRF > 0) {
-      setNotification("noPower");
+      setNotification(FarmNotification.NO_POWER);
       return;
     }
 
@@ -480,7 +507,7 @@ public class TileFarmStation extends AbstractPoweredTaskEntity implements IPaint
     }
 
     if(!hasPower() && (Config.farmBonemealActionEnergyUseRF > 0 || Config.farmBonemealTryEnergyUseRF > 0)) {
-      setNotification("noPower");
+      setNotification(FarmNotification.NO_POWER);
       return;
     }
 

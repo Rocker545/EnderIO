@@ -121,6 +121,7 @@ enderio.itemOCConduit.name=Network Conduit (OC)
 
 //display string for Skeleton(type==1)
 entity.witherSkeleton.name=Wither Skeleton
+entity.ZombieVillager.name=Zombie Villager
 
 //Materials
 enderio.itemMaterial.name=Materials
@@ -455,6 +456,8 @@ enderio.farm.note.outputFull=Output Full
 enderio.farm.note.noSeeds=No Seeds
 enderio.farm.note.noAxe=No Axe
 enderio.farm.note.noHoe=No Hoe
+enderio.farm.note.noShears=No Shears
+enderio.farm.note.noTreetap=No Treetap
 enderio.farm.note.noPower=No Power
 enderio.farm.gui.baseUse=Base Use:
 
@@ -757,6 +760,8 @@ tile.blockPaintedDoubleSlab.name=Painted Slab
 tile.blockPaintedStoneDoubleSlab.name=Painted Stone Slab
 tile.blockPaintedGlowstone.name=Painted Glowstone
 tile.blockPaintedGlowstoneSolid.name=Painted Glowstone
+tile.blockPaintedRedstone.name=Painted Redstone
+tile.blockPaintedRedstoneSolid.name=Painted Redstone
 tile.blockPaintedCarpet.name=Painted Carpet
 enderio.painter.tooltip.wasPainted=§oWhat did you think that would do?
 
@@ -1357,4 +1362,42 @@ enderio.loot.capacitor.title.12=A Capacitor. Maybe
 enderio.loot.capacitor.title.13=Heaven Cent
 enderio.loot.capacitor.title.14=Don't turn it on, take it apart!
 
+enderio.color.black=Black
+enderio.color.red=Red
+enderio.color.green=Green
+enderio.color.brown=Brown
+enderio.color.blue=Blue
+enderio.color.purple=Purple
+enderio.color.cyan=Cyan
+enderio.color.silver=Light Gray
+enderio.color.gray=Gray
+enderio.color.pink=Pink
+enderio.color.lime=Lime
+enderio.color.yellow=Yellow
+enderio.color.lightBlue=Light Blue
+enderio.color.magenta=Magenta
+enderio.color.orange=Orange
+enderio.color.white=White
 
+enderio.remoteinv.chat.set=Target set
+enderio.remoteinv.chat.notarget=ERROR: No target
+enderio.remoteinv.chat.outofrange=ERROR: Out of range
+enderio.remoteinv.chat.invalidtargetworld=ERROR: Target in unaccessible dimension
+enderio.remoteinv.chat.notloaded=ERROR: Target is not loaded
+enderio.remoteinv.chat.invalidtarget=ERROR: Target does not exist
+enderio.remoteinv.chat.outofpower=ERROR: Out of power
+enderio.remoteinv.chat.outoffluid=ERROR: Out of nutrient distillation
+enderio.remoteinv.chat.notloaded.client=ERROR: Target is not loaded client-side (not yet implemented)
+enderio.remoteinv.chat.error=ERROR: Technical error, see log
+
+item.itemRemoteInvAccessbasic.name=Inventory Panel Remote
+item.itemRemoteInvAccessbasic.tooltip.detailed.line1=Allows you to access an Inventory Panel from up to 10 chunks away.
+item.itemRemoteInvAccessbasic.tooltip.detailed.line2=Crouch-Right-Click a panel to bind the remote to it.
+item.itemRemoteInvAccessbasic.tooltip.detailed.line3=Uses Nutrient Distillation to open a connection and RF to keep it open.
+
+item.itemRemoteInvAccessadvanced.name=Advanced Inventory Panel Remote
+item.itemRemoteInvAccessadvanced.tooltip.detailed.line1=Allows you to access an Inventory Panel from anywhere in the same dimension.
+item.itemRemoteInvAccessadvanced.tooltip.detailed.line2=Crouch-Right-Click a panel to bind the remote to it.
+item.itemRemoteInvAccessadvanced.tooltip.detailed.line3=Uses Nutrient Distillation to open a connection and RF to keep it open.
+
+item.itemRemoteInvAccessender.name=Not yet implemented

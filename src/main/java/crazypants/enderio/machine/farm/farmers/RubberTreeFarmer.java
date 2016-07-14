@@ -1,9 +1,11 @@
 package crazypants.enderio.machine.farm.farmers;
 
 import java.util.List;
+import java.util.Random;
 
 import com.enderio.core.common.util.BlockCoord;
 
+import crazypants.enderio.machine.farm.FarmNotification;
 import crazypants.enderio.machine.farm.FarmStationContainer;
 import crazypants.enderio.machine.farm.TileFarmStation;
 import crazypants.enderio.machine.farm.TileFarmStation.ToolType;
@@ -19,7 +21,7 @@ import net.minecraftforge.common.IShearable;
 
 public abstract class RubberTreeFarmer extends TreeFarmer {
 
-  private ItemStack stickyResin;
+  protected ItemStack stickyResin;
 
   public RubberTreeFarmer(Block sapling, Block wood, Item treetap, ItemStack resin) {
     super(sapling, wood);
@@ -67,11 +69,16 @@ public abstract class RubberTreeFarmer extends TreeFarmer {
     int noShearingPercentage = farm.isLowOnSaplings(bc);
     int shearCount = 0;
 
-    while (pos.getY() <= 255 && farm.hasTool(ToolType.TREETAP)) {
+    while (pos.getY() <= 255) {
       IBlockState state = world.getBlockState(pos);
       if (isWood(state.getBlock())) {
-        if (attemptHarvest(res, world, pos)) {
-          farm.damageTool(ToolType.TREETAP, woods[0], bc, 1);
+        if (canHarvest(world, pos)) {
+          if (farm.hasTool(ToolType.TREETAP)) {
+            harvest(res, world, pos);
+            farm.damageTool(ToolType.TREETAP, woods[0], bc, 1);
+          } else {
+            farm.setNotification(FarmNotification.NO_TREETAP);
+          }
         }
         for (EnumFacing face : EnumFacing.Plane.HORIZONTAL) {
           shearCount = harvestLeavesBlock(farm, res, world, pos.offset(face), noShearingPercentage, shearCount);
@@ -113,16 +120,20 @@ public abstract class RubberTreeFarmer extends TreeFarmer {
     return shearCount;
   }
 
-  private boolean attemptHarvest(HarvestResult res, World world, BlockPos pos) {
-    if (hasResin(world.getBlockState(pos))) {
-      world.setBlockState(pos, removeResin(world.getBlockState(pos)), 3);
-      ItemStack drop = stickyResin.copy();
-      EntityItem dropEnt = new EntityItem(world, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, drop);
-      res.getDrops().add(dropEnt);
-      res.getHarvestedBlocks().add(pos);
-      return true;
-    }
-    return false;
+  private boolean canHarvest(World world, BlockPos pos) {
+    return hasResin(world.getBlockState(pos));
+  }
+
+  private void harvest(HarvestResult res, World world, BlockPos pos) {
+    world.setBlockState(pos, removeResin(world.getBlockState(pos)), 3);
+    ItemStack drop = makeResin(world.rand);
+    EntityItem dropEnt = new EntityItem(world, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, drop);
+    res.getDrops().add(dropEnt);
+    res.getHarvestedBlocks().add(pos);
+  }
+
+  protected ItemStack makeResin(Random rand) {
+    return stickyResin.copy();
   }
 
   protected abstract boolean hasResin(IBlockState state);

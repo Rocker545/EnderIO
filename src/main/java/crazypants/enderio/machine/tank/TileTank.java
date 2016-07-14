@@ -13,8 +13,9 @@ import com.enderio.core.common.util.FluidUtil.FluidAndStackResult;
 import com.enderio.core.common.util.ItemUtil;
 
 import crazypants.enderio.EnderIO;
+import crazypants.enderio.fluid.SmartTankFluidHandler;
+import crazypants.enderio.fluid.SmartTankFluidMachineHandler;
 import crazypants.enderio.machine.AbstractMachineEntity;
-import crazypants.enderio.machine.IoMode;
 import crazypants.enderio.machine.SlotDefinition;
 import crazypants.enderio.network.PacketHandler;
 import crazypants.enderio.paint.IPaintable;
@@ -24,16 +25,15 @@ import info.loenwind.autosave.annotations.Store;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidContainerItem;
-import net.minecraftforge.fluids.IFluidHandler;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 
 @Storable
-public class TileTank extends AbstractMachineEntity implements IFluidHandler, ITankAccess.IExtendedTankAccess, IPaintable.IPaintableTileEntity {
+public class TileTank extends AbstractMachineEntity implements ITankAccess.IExtendedTankAccess, IPaintable.IPaintableTileEntity {
 
   private static int IO_MB_TICK = 100;
 
@@ -54,6 +54,7 @@ public class TileTank extends AbstractMachineEntity implements IFluidHandler, IT
     } else {
       tank = new SmartTank(16000);
     }
+    tank.setTileEntity(this);
   }
 
   public TileTank() {
@@ -80,81 +81,6 @@ public class TileTank extends AbstractMachineEntity implements IFluidHandler, IT
       }
     }
     return res;
-  }
-
-  @Override
-  public int fill(EnumFacing from, FluidStack resource, boolean doFill) {
-    if(!canFill(from)) {
-      return 0;
-    }
-    return fillInternal(resource, doFill);
-  }
-
-  int fillInternal(FluidStack resource, boolean doFill) {
-    int res = tank.fill(resource, doFill);
-    if(res > 0 && doFill) {
-      setTanksDirty();
-    }
-    return res;
-  }
-
-  @Override
-  public FluidStack drain(EnumFacing from, FluidStack resource, boolean doDrain) {
-    if(!canDrain(from)) {
-      return null;
-    }
-    return drainInternal(resource, doDrain);
-  }
-
-  FluidStack drainInternal(FluidStack resource, boolean doDrain) {
-    FluidStack res = tank.drain(resource, doDrain);
-    if(res != null && res.amount > 0 && doDrain) {
-      setTanksDirty();
-    }
-    return res;
-  }
-
-  @Override
-  public FluidStack drain(EnumFacing from, int maxDrain, boolean doDrain) {
-    if(!canDrain(from)) {
-      return null;
-    }
-    return drainInternal(maxDrain, doDrain);
-  }
-
-  FluidStack drainInternal(int maxDrain, boolean doDrain) {
-    FluidStack res = tank.drain(maxDrain, doDrain);
-    if(res != null && res.amount > 0 && doDrain) {
-      setTanksDirty();
-    }
-    return res;
-  }
-
-  @Override
-  public boolean canFill(EnumFacing from, Fluid fluid) {
-    
-    return canFill(from) && fluid != null
-        && (tank.getFluidAmount() > 0 && FluidUtil.areFluidsTheSame(tank.getFluid().getFluid(), fluid) || tank.getFluidAmount() == 0);
-  }
-
-  private boolean canFill(EnumFacing from) {
-    IoMode mode = getIoMode(from);
-    return mode != IoMode.PUSH && mode != IoMode.DISABLED;
-  }
-
-  @Override
-  public boolean canDrain(EnumFacing from, Fluid fluid) {
-    return canDrain(from) && tank.canDrainFluidType(fluid);
-  }
-
-  private boolean canDrain(EnumFacing from) {
-    IoMode mode = getIoMode(from);
-    return mode != IoMode.PULL && mode != IoMode.DISABLED;
-  }
-  
-  @Override
-  public FluidTankInfo[] getTankInfo(EnumFacing from) {
-    return new FluidTankInfo[] { new FluidTankInfo(tank) };
   }
 
   private int getFilledLevel() {
@@ -393,6 +319,25 @@ public class TileTank extends AbstractMachineEntity implements IFluidHandler, IT
         return tank.getCapacity();
       }
     });
+  }
+
+  private SmartTankFluidHandler smartTankFluidHandler;
+
+  @Override
+  public boolean hasCapability(Capability<?> capability, EnumFacing facingIn) {
+    return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY || super.hasCapability(capability, facingIn);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> T getCapability(Capability<T> capability, EnumFacing facingIn) {
+    if (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
+      if (smartTankFluidHandler == null) {
+        smartTankFluidHandler = new SmartTankFluidMachineHandler(this, tank);
+      }
+      return (T) smartTankFluidHandler.get(facingIn);
+    }
+    return super.getCapability(capability, facingIn);
   }
 
 }

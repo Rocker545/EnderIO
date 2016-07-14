@@ -327,11 +327,19 @@ public final class Config {
       "ThermalFoundation:tool.hoeElectrum", "ThermalFoundation:tool.hoeTin", "ThermalFoundation:tool.hoeLead", "ThermalFoundation:tool.hoeNickel",
       "ThermalFoundation:tool.hoePlatinum",
       "TwilightForest:item.steeleafHoe", "TwilightForest:item.ironwoodHoe",
-      "IC2:itemToolBronzeHoe", "techreborn:bronzeHoe", "techreborn:rubyHoe", "techreborn:sapphireHoe", "techreborn:peridotHoe"
+      "IC2:itemToolBronzeHoe", "techreborn:bronzeHoe", "techreborn:rubyHoe", "techreborn:sapphireHoe", "techreborn:peridotHoe", "basemetals:adamantine_hoe",
+      "basemetals:aquarium_hoe", "basemetals:brass_hoe", "basemetals:bronze_hoe", "basemetals:coldiron_hoe", "basemetals:copper_hoe",
+      "basemetals:cupronickel_hoe", "basemetals:electrum_hoe", "basemetals:invar_hoe", "basemetals:lead_hoe", "basemetals:mithril_hoe", "basemetals:nickel_hoe",
+      "basemetals:platinum_hoe", "basemetals:silver_hoe", "basemetals:starsteel_hoe", "basemetals:steel_hoe", "basemetals:tin_hoe",
+      "actuallyadditions:itemHoeQuartz", "actuallyadditions:itemHoeEmerald", "actuallyadditions:itemHoeObsidian",
+      "actuallyadditions:itemHoeCrystalRed", "actuallyadditions:itemHoeCrystalBlue", "actuallyadditions:itemHoeCrystalLightBlue",
+      "actuallyadditions:itemHoeCrystalBlack", "actuallyadditions:itemHoeCrystalGreen", "actuallyadditions:itemHoeCrystalWhite", "silentgems:Hoe",
+      "ic2:bronze_hoe" // IC2exp
   };
   public static Things farmHoes = new Things();
   public static int farmSaplingReserveAmount = 8;
   public static boolean farmStopOnNoOutputSlots = true;
+  public static boolean farmEvictEmptyRFTools = true;
 
   public static int magnetPowerUsePerSecondRF = 1;
   public static int magnetPowerCapacityRF = 100000;
@@ -485,6 +493,12 @@ public final class Config {
   public static float inventoryPanelScanCostPerSlot = 0.1f;
   public static float inventoryPanelExtractCostPerItem = 12.0f;
   public static float inventoryPanelExtractCostPerOperation = 32.0f;
+  public static boolean inventoryPanelScaleText = true;
+
+  public static int remoteInventoryMBPerOpen = 100;
+  public static int remoteInventoryRFPerTick = 4;
+  public static int remoteInventoryMBCapacity = 2000;
+  public static int remoteInventoryRFCapacity = 60000;
 
   public static boolean photovoltaicCanTypesJoins = true;
   public static int photovoltaicRecalcSunTick = 100;
@@ -501,6 +515,8 @@ public final class Config {
   public static boolean topShowTanksByDefault = true;
   
   public static boolean paintedGlowstoneRequireSilkTouch = false;
+
+  
 
   public static void load(FMLPreInitializationEvent event) {
     PacketHandler.INSTANCE.registerMessage(PacketConfigSync.class, PacketConfigSync.class, PacketHandler.nextID(), Side.CLIENT);    
@@ -1132,6 +1148,9 @@ public final class Config {
         "If this is enabled the farm will stop if there is not at least one empty output slot. Otherwise it will only stop if all output slots are full.")
         .getBoolean();
 
+    farmEvictEmptyRFTools = config.get(sectionFarm.name, "farmEvictEmptyRFTools", farmEvictEmptyRFTools,
+        "If this is enabled the farm will move tools that can store RF and are empty to the output slots instead of using them.").getBoolean();
+
     magnetPowerUsePerSecondRF = config.get(sectionMagnet.name, "magnetPowerUsePerTickRF", magnetPowerUsePerSecondRF,
         "The amount of RF power used per tick when the magnet is active").getInt(magnetPowerUsePerSecondRF);
     magnetPowerCapacityRF = config.get(sectionMagnet.name, "magnetPowerCapacityRF", magnetPowerCapacityRF,
@@ -1339,13 +1358,15 @@ public final class Config {
 
     inventoryPanelFree = config.getBoolean("inventoryPanelFree", sectionInventoryPanel.name, inventoryPanelFree, "If true, the inv panel will not accept fluids and will be active permanently.");
     inventoryPanelPowerPerMB = config.getFloat("powerPerMB", sectionInventoryPanel.name, inventoryPanelPowerPerMB, 1.0f, 10000.0f,
-        "Internal power generated per mB. The default of 800/mB matches the RF generation of the Zombie generator. A panel tries to refill only once every second - setting this value too low slows down the scanning speed.");
+        "Internal power generated per mB. The default of 800/mB matches the RF generation of the Zombie generator. A panel tries to refill only once every second - setting this value too low slows down the scanning speed.");    
     inventoryPanelScanCostPerSlot = config.getFloat("scanCostPerSlot", sectionInventoryPanel.name, inventoryPanelScanCostPerSlot, 0.0f, 10.0f,
         "Internal power used for scanning a slot");
     inventoryPanelExtractCostPerItem = config.getFloat("extractCostPerItem", sectionInventoryPanel.name, inventoryPanelExtractCostPerItem, 0.0f, 10.0f,
         "Internal power used per item extracted (not a stack of items)");
     inventoryPanelExtractCostPerOperation = config.getFloat("extractCostPerOperation", sectionInventoryPanel.name, inventoryPanelExtractCostPerOperation, 0.0f,
         10000.0f, "Internal power used per extract operation (independent of stack size)");
+    inventoryPanelScaleText= config.getBoolean("inventoryPanelScaleText", sectionInventoryPanel.name, inventoryPanelScaleText,
+        "If true stack sizes will be drawn at a smaller size with a little more detail.");
     
     debugUpdatePackets = config.getBoolean("debugUpdatePackets", sectionPersonal.name, debugUpdatePackets,
         "DEBUG: If true, TEs will flash when they recieve an update packet.");

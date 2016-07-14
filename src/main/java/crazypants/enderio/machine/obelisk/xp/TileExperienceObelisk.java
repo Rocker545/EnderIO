@@ -8,6 +8,8 @@ import com.enderio.core.common.fluid.FluidWrapper;
 
 import crazypants.enderio.ModObject;
 import crazypants.enderio.config.Config;
+import crazypants.enderio.fluid.SmartTankFluidHandler;
+import crazypants.enderio.fluid.SmartTankFluidMachineHandler;
 import crazypants.enderio.machine.AbstractMachineEntity;
 import crazypants.enderio.machine.SlotDefinition;
 import crazypants.enderio.network.PacketHandler;
@@ -19,20 +21,20 @@ import info.loenwind.autosave.annotations.Storable;
 import info.loenwind.autosave.annotations.Store;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidHandler;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 
 @Storable
-public class TileExperienceObelisk extends AbstractMachineEntity implements IFluidHandler, IHaveExperience, ITankAccess {
+public class TileExperienceObelisk extends AbstractMachineEntity implements IHaveExperience, ITankAccess {
 
   @Store
   private ExperienceContainer xpCont = new ExperienceContainer(XpUtil.getExperienceForLevel(Config.xpObeliskMaxXpLevel));
 
   public TileExperienceObelisk() {
     super(new SlotDefinition(0, 0, 0));
+    xpCont.setTileEntity(this);
   }
 
   @Override
@@ -82,36 +84,6 @@ public class TileExperienceObelisk extends AbstractMachineEntity implements IFlu
   }
 
   @Override
-  public boolean canFill(EnumFacing from, Fluid fluid) {
-    return xpCont.canFill(from, fluid);
-  }
-
-  @Override
-  public int fill(EnumFacing from, FluidStack resource, boolean doFill) {
-    return xpCont.fill(from, resource, doFill);
-  }
-
-  @Override
-  public FluidStack drain(EnumFacing from, FluidStack resource, boolean doDrain) {
-    return xpCont.drain(from, resource, doDrain);
-  }
-
-  @Override
-  public FluidStack drain(EnumFacing from, int maxDrain, boolean doDrain) {
-    return xpCont.drain(from, maxDrain, doDrain);
-  }
-
-  @Override
-  public boolean canDrain(EnumFacing from, Fluid fluid) {
-    return xpCont.canDrain(from, fluid);
-  }
-
-  @Override
-  public FluidTankInfo[] getTankInfo(EnumFacing from) {
-    return xpCont.getTankInfo(from);
-  }
-
-  @Override
   public ExperienceContainer getContainer() {
     return xpCont;
   }
@@ -129,6 +101,25 @@ public class TileExperienceObelisk extends AbstractMachineEntity implements IFlu
   @Override
   public void setTanksDirty() {
     xpCont.setDirty(true);
+  }
+
+  private SmartTankFluidHandler smartTankFluidHandler;
+
+  @Override
+  public boolean hasCapability(Capability<?> capability, EnumFacing facingIn) {
+    return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY || super.hasCapability(capability, facingIn);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> T getCapability(Capability<T> capability, EnumFacing facingIn) {
+    if (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
+      if (smartTankFluidHandler == null) {
+        smartTankFluidHandler = new SmartTankFluidMachineHandler(this, xpCont);
+      }
+      return (T) smartTankFluidHandler.get(facingIn);
+    }
+    return super.getCapability(capability, facingIn);
   }
 
 }

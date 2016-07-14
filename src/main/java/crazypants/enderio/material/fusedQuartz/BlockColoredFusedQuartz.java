@@ -3,12 +3,14 @@ package crazypants.enderio.material.fusedQuartz;
 import java.util.List;
 
 import crazypants.enderio.EnderIO;
+import crazypants.enderio.EnderIOTab;
 import crazypants.enderio.ModObject;
 import crazypants.enderio.machine.painter.blocks.BlockItemPaintedBlock;
+import crazypants.enderio.paint.PainterUtil2.IWithPaintName;
 import crazypants.enderio.render.EnumMergingBlockRenderMode;
+import crazypants.enderio.render.ITintedItem;
 import net.minecraft.block.BlockColored;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.color.IItemColor;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumDyeColor;
@@ -26,7 +28,9 @@ public class BlockColoredFusedQuartz extends BlockFusedQuartz {
 
   public static BlockColoredFusedQuartz create() {
     for (FusedQuartzType glasstype : FusedQuartzType.values()) {
-      new BlockColoredFusedQuartz(glasstype).init();
+      final BlockColoredFusedQuartz blockColoredFusedQuartz = new BlockColoredFusedQuartz(glasstype);
+      blockColoredFusedQuartz.init();
+      glasstype.setBlock(blockColoredFusedQuartz);
     }
     return null;
   }
@@ -58,7 +62,9 @@ public class BlockColoredFusedQuartz extends BlockFusedQuartz {
   public void getSubBlocks(Item par1, CreativeTabs par2CreativeTabs, List<ItemStack> par3List) {
     if (par2CreativeTabs != null) {
       for (EnumDyeColor enumdyecolor : EnumDyeColor.values()) {
-        par3List.add(new ItemStack(par1, 1, enumdyecolor.getMetadata()));
+        if (enumdyecolor != EnumDyeColor.WHITE || par2CreativeTabs == EnderIOTab.tabNoTab) {
+          par3List.add(new ItemStack(par1, 1, enumdyecolor.getMetadata()));
+        }
       }
     }
   }
@@ -73,14 +79,14 @@ public class BlockColoredFusedQuartz extends BlockFusedQuartz {
     return new BlockItemFusedQuartzColored(this, getName());
   }
 
-  public static class BlockItemFusedQuartzColored extends BlockItemPaintedBlock implements IItemColor {
+  public static class BlockItemFusedQuartzColored extends BlockItemPaintedBlock implements ITintedItem, IWithPaintName {
 
     public BlockItemFusedQuartzColored(BlockColoredFusedQuartz block, String name) {
       super(block, name);
     }
 
     @Override
-    public int getColorFromItemstack(ItemStack stack, int tintIndex) {
+    public int getItemTint(ItemStack stack, int tintIndex) {
       return stack == null ? -1 : EnumDyeColor.byMetadata(stack.getMetadata()).getMapColor().colorValue;
     }
 
@@ -100,6 +106,22 @@ public class BlockColoredFusedQuartz extends BlockFusedQuartz {
       }
     }
 
+    @Override
+    public String getPaintName(ItemStack stack) {
+      return EnderIO.lang.localize("color." + EnumDyeColor.byMetadata(stack.getMetadata()).getUnlocalizedName());
+    }
+
   }
+
+  // @Override
+  // @Nullable
+  // public Item getItemDropped(IBlockState state, Random rand, int fortune) {
+  // return Item.getItemFromBlock(this);
+  // }
+  //
+  // @Override
+  // public int damageDropped(IBlockState state) {
+  // return getMetaFromState(state);
+  // }
 
 }

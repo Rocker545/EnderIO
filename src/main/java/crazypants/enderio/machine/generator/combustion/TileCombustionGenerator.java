@@ -14,6 +14,8 @@ import crazypants.enderio.ModObject;
 import crazypants.enderio.fluid.FluidFuelRegister;
 import crazypants.enderio.fluid.IFluidCoolant;
 import crazypants.enderio.fluid.IFluidFuel;
+import crazypants.enderio.fluid.SmartTankFluidHandler;
+import crazypants.enderio.fluid.SmartTankFluidMachineHandler;
 import crazypants.enderio.machine.IoMode;
 import crazypants.enderio.machine.SlotDefinition;
 import crazypants.enderio.machine.generator.AbstractGeneratorEntity;
@@ -27,21 +29,34 @@ import info.loenwind.autosave.annotations.Store.StoreFor;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidHandler;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 
 @Storable
 public class TileCombustionGenerator extends AbstractGeneratorEntity
-    implements IFluidHandler, ITankAccess.IExtendedTankAccess, IPaintable.IPaintableTileEntity {
+    implements ITankAccess.IExtendedTankAccess, IPaintable.IPaintableTileEntity {
 
   @Store
-  private final SmartTank coolantTank = new SmartTank(FluidContainerRegistry.BUCKET_VOLUME * 5);
+  private final SmartTank coolantTank = new SmartTank(FluidContainerRegistry.BUCKET_VOLUME * 5) {
+
+    @Override
+    public boolean canFillFluidType(FluidStack resource) {
+      return super.canFillFluidType(resource) && FluidFuelRegister.instance.getCoolant(resource.getFluid()) != null;
+    }
+
+  };
   @Store
-  private final SmartTank fuelTank = new SmartTank(FluidContainerRegistry.BUCKET_VOLUME * 5);
+  private final SmartTank fuelTank = new SmartTank(FluidContainerRegistry.BUCKET_VOLUME * 5) {
+
+    @Override
+    public boolean canFillFluidType(FluidStack resource) {
+      return super.canFillFluidType(resource) && FluidFuelRegister.instance.getFuel(resource.getFluid()) != null;
+    }
+
+  };
   private boolean tanksDirty;
 
   @Store({ StoreFor.ITEM, StoreFor.SAVE })
@@ -69,6 +84,10 @@ public class TileCombustionGenerator extends AbstractGeneratorEntity
 
   public TileCombustionGenerator() {
     super(new SlotDefinition(-1, -1, -1, -1, -1, -1), ModObject.blockCombustionGenerator);
+    coolantTank.setTileEntity(this);
+    coolantTank.setCanDrain(false);
+    fuelTank.setTileEntity(this);
+    fuelTank.setCanDrain(false);
   }
 
   @Override
@@ -105,38 +124,6 @@ public class TileCombustionGenerator extends AbstractGeneratorEntity
   @Override
   public boolean isActive() {
     return active;
-  }
-
-  @Override
-  public int fill(EnumFacing from, FluidStack resource, boolean doFill) {
-    if (resource == null || resource.getFluid() == null || !canFill(from, resource.getFluid())) {
-      return 0;
-    }
-    int res = 0;
-
-    IFluidCoolant cool = FluidFuelRegister.instance.getCoolant(resource.getFluid());
-    if (cool != null) {
-      res = getCoolantTank().fill(resource, doFill);
-    } else {
-      IFluidFuel f = FluidFuelRegister.instance.getFuel(resource.getFluid());
-      if (f != null) {
-        res = getFuelTank().fill(resource, doFill);
-      }
-    }
-    if (res > 0) {
-      tanksDirty = true;
-    }
-    return res;
-  }
-
-  @Override
-  public FluidStack drain(EnumFacing from, FluidStack resource, boolean doDrain) {
-    return null;
-  }
-
-  @Override
-  public FluidStack drain(EnumFacing from, int maxDrain, boolean doDrain) {
-    return null;
   }
 
   @Override
@@ -227,13 +214,11 @@ public class TileCombustionGenerator extends AbstractGeneratorEntity
       if (curFuel == null) {
         return false;
       }
-      FluidStack drained = getFuelTank().drain(100, true);
-      if (drained == null) {
+      int drained = getFuelTank().removeFluidAmount(100);
+      if (drained == 0) {
         return false;
       }
-      ticksRemaingFuel = getNumTicksPerMbFuel(curFuel) * drained.amount;
-
-      tanksDirty = true;
+      ticksRemaingFuel = getNumTicksPerMbFuel(curFuel) * drained;
     } else if (curFuel == null) {
       curFuel = FluidFuelRegister.instance.getFuel(getFuelTank().getFluid());
       if (curFuel == null) {
@@ -247,11 +232,11 @@ public class TileCombustionGenerator extends AbstractGeneratorEntity
       if (curCoolant == null) {
         return false;
       }
-      FluidStack drained = getCoolantTank().drain(100, true);
-      if (drained == null) {
+      int drained = getCoolantTank().removeFluidAmount(100);
+      if (drained == 0) {
         return false;
       }
-      ticksRemaingCoolant = getNumTicksPerMbCoolant(curCoolant, curFuel) * drained.amount;
+      ticksRemaingCoolant = getNumTicksPerMbCoolant(curCoolant, curFuel) * drained;
     } else if (curCoolant == null) {
       updateCoolantFromTank();
       if (curCoolant == null) {
@@ -291,7 +276,7 @@ public class TileCombustionGenerator extends AbstractGeneratorEntity
     return getNumTicksPerMbCoolant(curCoolant, curFuel);
   }
 
-  static int getNumTicksPerMbFuel(IFluidFuel fuel) {
+  public static int getNumTicksPerMbFuel(IFluidFuel fuel) {
     if (fuel == null) {
       return 0;
     }
@@ -300,7 +285,7 @@ public class TileCombustionGenerator extends AbstractGeneratorEntity
 
   public static float HEAT_PER_RF = 0.00023F;
 
-  static int getNumTicksPerMbCoolant(IFluidCoolant coolant, IFluidFuel fuel) {
+  public static int getNumTicksPerMbCoolant(IFluidCoolant coolant, IFluidFuel fuel) {
     if (coolant == null || fuel == null) {
       return 0;
     }
@@ -309,27 +294,6 @@ public class TileCombustionGenerator extends AbstractGeneratorEntity
     double toCool = 1d / (HEAT_PER_RF * power);
     int numTicks = (int) Math.round(toCool / (cooling * 1000));
     return numTicks;
-  }
-
-  @Override
-  public boolean canFill(EnumFacing from, Fluid fluid) {
-    if (isSideDisabled(from) || fluid == null) {
-      return false;
-    }
-    return FluidFuelRegister.instance.getCoolant(fluid) != null || FluidFuelRegister.instance.getFuel(fluid) != null;
-  }
-
-  @Override
-  public boolean canDrain(EnumFacing from, Fluid fluid) {
-    return false;
-  }
-
-  @Override
-  public FluidTankInfo[] getTankInfo(EnumFacing from) {
-    if (isSideDisabled(from)) {
-      return new FluidTankInfo[0];
-    }
-    return new FluidTankInfo[] { getCoolantTank().getInfo(), getFuelTank().getInfo() };
   }
 
   public int getGeneratedLastTick() {
@@ -351,11 +315,11 @@ public class TileCombustionGenerator extends AbstractGeneratorEntity
     return fuel.getPowerPerCycle();
   }
 
-  public FluidTank getCoolantTank() {
+  public SmartTank getCoolantTank() {
     return coolantTank;
   }
 
-  public FluidTank getFuelTank() {
+  public SmartTank getFuelTank() {
     return fuelTank;
   }
 
@@ -425,6 +389,25 @@ public class TileCombustionGenerator extends AbstractGeneratorEntity
       }
     });
     return result;
+  }
+
+  private SmartTankFluidHandler smartTankFluidHandler;
+
+  @Override
+  public boolean hasCapability(Capability<?> capability, EnumFacing facingIn) {
+    return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY || super.hasCapability(capability, facingIn);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> T getCapability(Capability<T> capability, EnumFacing facingIn) {
+    if (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
+      if (smartTankFluidHandler == null) {
+        smartTankFluidHandler = new SmartTankFluidMachineHandler(this, coolantTank, fuelTank);
+      }
+      return (T) smartTankFluidHandler.get(facingIn);
+    }
+    return super.getCapability(capability, facingIn);
   }
 
 }

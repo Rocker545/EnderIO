@@ -1,10 +1,12 @@
 package crazypants.enderio.tool;
 
+import com.enderio.core.api.common.util.ITankAccess;
 import com.enderio.core.common.util.FluidUtil;
 import com.google.common.base.Strings;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidEvent;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
@@ -49,45 +51,66 @@ public class SmartTank extends FluidTank {
     return getFluidAmount() == 0;
   }
 
-  @Override
-  public boolean canDrainFluidType(FluidStack resource) {
-    if(resource == null || resource.getFluid() == null || fluid == null) {
+  /**
+   * Checks if the given fluid can actually be removed from this tank
+   * <p>
+   * Used by: te.canDrain()
+   */
+  public boolean canDrain(Fluid fl) {
+    if (fluid == null || fl == null || !canDrain()) {
       return false;
     }
-    return fluid.isFluidEqual(resource);
-  }
 
-  public boolean canDrainFluidType(Fluid fl) {
-    if(fl == null || fluid == null) {
-      return false;
-    }    
-    
     return FluidUtil.areFluidsTheSame(fl, fluid.getFluid());
   }
 
-  @Override
-  public FluidStack drain(FluidStack resource, boolean doDrain) {
-    if(!canDrainFluidType(resource)) {
-      return null;
+  /**
+   * Checks if the given fluid can actually be removed from this tank
+   * <p>
+   * Used by: internal
+   */
+  public boolean canDrain(FluidStack fluidStack) {
+    if (fluid == null || fluidStack == null || !canDrain()) {
+      return false;
     }    
-    return drain(resource.amount, doDrain);
+    
+    return fluidStack.isFluidEqual(fluid);
   }
 
+  /**
+   * Checks if the given fluid can actually be added to this tank (ignoring fill level)
+   * <p>
+   * Used by: internal
+   */
   public boolean canFill(FluidStack resource) {
-    if (fluid != null) {
+    if (!canFillFluidType(resource)) {
+      return false;
+    } else if (fluid != null) {
       return fluid.isFluidEqual(resource);
-    } else if (restriction != null) {
-      return resource.getFluid() != null && FluidUtil.areFluidsTheSame(restriction, resource.getFluid());
     } else {
       return true;
     }
   }
 
+  /**
+   * Checks if the given fluid can actually be added to this tank (ignoring fill level)
+   * <p>
+   * Used by: te.canFill()
+   */
   public boolean canFill(Fluid fl) {
-    if (fluid != null) {
+    if (fl == null || !canFillFluidType(new FluidStack(fl, 1))) {
+      return false;
+    } else if (fluid != null) {
       return FluidUtil.areFluidsTheSame(fluid.getFluid(), fl);
-    } else if (restriction != null) {
-      return FluidUtil.areFluidsTheSame(restriction, fl);
+    } else {
+      return true;
+    }
+  }
+
+  @Override
+  public boolean canFillFluidType(FluidStack resource) {
+    if (restriction != null) {
+      return resource != null && resource.getFluid() != null && FluidUtil.areFluidsTheSame(restriction, resource.getFluid());
     } else {
       return true;
     }
@@ -105,6 +128,7 @@ public class SmartTank extends FluidTank {
     } else {
       setFluid(null);
     }
+    onContentsChanged();
   }
 
   @Override
@@ -112,7 +136,19 @@ public class SmartTank extends FluidTank {
     if(!canFill(resource)) {
       return 0;
     }
-    return super.fill(resource, doFill);
+    return fillInternal(resource, doFill);
+  }
+
+  @Override
+  public FluidStack drain(FluidStack resource, boolean doDrain) {
+    // TODO Auto-generated method stub
+    return super.drain(resource, doDrain);
+  }
+
+  @Override
+  public FluidStack drain(int maxDrain, boolean doDrain) {
+    // TODO Auto-generated method stub
+    return super.drain(maxDrain, doDrain);
   }
 
   @Override
@@ -132,6 +168,26 @@ public class SmartTank extends FluidTank {
 
   public void addFluidAmount(int amount) {
     setFluidAmount(getFluidAmount() + amount);
+    if (tile != null) {
+      FluidEvent.fireEvent(new FluidEvent.FluidFillingEvent(fluid, tile.getWorld(), tile.getPos(), this, amount));
+    }
+  }
+
+  public int removeFluidAmount(int amount) {
+    int drained = 0;
+    if (getFluidAmount() > amount) {
+      setFluidAmount(getFluidAmount() - amount);
+      drained = amount;
+    } else if (!isEmpty()) {
+      drained = getFluidAmount();
+      setFluidAmount(0);
+    } else {
+      return 0;
+    }
+    if (tile != null) {
+      FluidEvent.fireEvent(new FluidEvent.FluidDrainingEvent(fluid, tile.getWorld(), tile.getPos(), this, drained));
+    }
+    return drained;
   }
 
   @Override
@@ -178,6 +234,16 @@ public class SmartTank extends FluidTank {
       result.setCapacity(result.getFluidAmount());
     }
     return result;
+  }
+
+  @Override
+  protected void onContentsChanged() {
+    super.onContentsChanged();
+    if (tile instanceof ITankAccess) {
+      ((ITankAccess) tile).setTanksDirty();
+    } else if (tile != null) {
+      tile.markDirty();
+    }
   }
 
 }

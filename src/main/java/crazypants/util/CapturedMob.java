@@ -204,7 +204,7 @@ public class CapturedMob {
     }
     @Nonnull
     EnumFacing theSide = side != null ? side : EnumFacing.UP;
-    Entity entity = getEntity(world, clone);
+    Entity entity = getEntity(world, pos, null, clone);
     if (entity == null) {
       return false;
     }
@@ -258,6 +258,7 @@ public class CapturedMob {
     return getEntity(world, null, null, clone);
   }
 
+  @SuppressWarnings("null")
   public @Nullable Entity getEntity(@Nullable World world, @Nullable BlockPos pos, DifficultyInstance difficulty, boolean clone) {
     Entity entity = null;
     if (world != null) {
@@ -274,14 +275,19 @@ public class CapturedMob {
       if (pos != null && entity != null) {
         entity.setPosition(pos.getX(), pos.getY(), pos.getZ());
       }
-      if (difficulty != null && entity instanceof EntityLiving) {
-        IEntityLivingData livingData = null;
-        if (variant != null && entity instanceof EntityZombie) {
-          livingData = new IEntityLivingData() {
-          };
+      if (entity instanceof EntityLiving) {
+        if (pos != null && difficulty == null) {
+          difficulty = world.getDifficultyForLocation(pos);
         }
-        ((EntityLiving) entity).onInitialSpawn(difficulty, livingData);
-      }
+        if (difficulty != null) {
+          IEntityLivingData livingData = null;
+          if (variant != null && entity instanceof EntityZombie) {
+            livingData = new IEntityLivingData() {
+            };
+          }
+          ((EntityLiving) entity).onInitialSpawn(difficulty, livingData);
+        }
+        }
       if (variant != null) {
         if (entity instanceof EntitySkeleton) {
           EntitySkeleton skel = (EntitySkeleton) entity;
@@ -312,8 +318,10 @@ public class CapturedMob {
         } else if (entity instanceof EntityZombie) {
           boolean isChild = world.rand.nextFloat() < net.minecraftforge.common.ForgeModContainer.zombieBabyChance;
           ((EntityZombie)entity).func_189778_a((ZombieType)variant);
-          if (variant != ZombieType.NORMAL && variant != ZombieType.HUSK) {
-            net.minecraftforge.fml.common.registry.VillagerRegistry.setRandomProfession((EntityZombie)entity, world.rand);
+          if (((ZombieType) variant).func_190154_b()) {
+            do {
+              net.minecraftforge.fml.common.registry.VillagerRegistry.setRandomProfession((EntityZombie) entity, world.rand);
+            } while (((EntityZombie) entity).getVillagerTypeForge() == null && !((EntityZombie) entity).func_189777_di().func_190154_b());
           }
           if (isChild) {
             ((EntityZombie) entity).setChild(true);
@@ -339,7 +347,11 @@ public class CapturedMob {
       String typeName = variant == SkeletonType.NORMAL ? entityId : variant == SkeletonType.WITHER ? "WitherSkeleton" : "Stray";
       baseName = EntityUtil.getDisplayNameForEntity(typeName);
     } else if (variant != null && ZOMBIE_ENTITY_NAME.equals(entityId)) {
-      baseName = ((ZombieType) variant).func_190145_d().getUnformattedText();
+      if (((ZombieType) variant).func_190154_b()) {
+        baseName = EntityUtil.getDisplayNameForEntity("ZombieVillager");
+      } else {
+        baseName = ((ZombieType) variant).func_190145_d().getUnformattedText();
+      }
     } else if (entityId != null) {
       baseName = EntityUtil.getDisplayNameForEntity(entityId);
     } else if (entityNbt != null) {
@@ -426,7 +438,7 @@ public class CapturedMob {
   @Override
   public String toString() {
     return "CapturedMob [" + (entityId != null ? "entityId=" + entityId + ", " : "") + (customName != null ? "customName=" + customName + ", " : "")
-        + "isStub=" + isStub + ", isVariant=" + variant + ", " + (entityNbt != null ? "entityNbt=" + entityNbt + ", " : "") + "getDisplayName()="
+        + "isStub=" + isStub + ", variant=" + variant + ", " + (entityNbt != null ? "entityNbt=" + entityNbt + ", " : "") + "getDisplayName()="
         + getDisplayName() + ", getHealth()=" + getHealth() + ", getMaxHealth()=" + getMaxHealth() + ", "
         + (getColor() != null ? "getColor()=" + getColor() + ", " : "") + (getFluidName() != null ? "getFluidName()=" + getFluidName() : "") + "]";
   }

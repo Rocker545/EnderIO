@@ -233,6 +233,7 @@ public class ClientProxy extends CommonProxy {
     registerRenderers(EnderIO.itemLiquidConduit);
     registerRenderers(EnderIO.itemItemConduit);
     registerRenderers(EnderIO.itemRedstoneConduit);
+    registerRenderers(EnderIO.itemOCConduit);
     ClientUtil.registerRenderer(EnderIO.itemTravelStaff, ModObject.itemTravelStaff.getUnlocalisedName());
     ClientUtil.registerRenderer(EnderIO.itemXpTransfer, ModObject.itemXpTransfer.getUnlocalisedName());
     ClientUtil.registerRenderer(EnderIO.itemBrokenSpawner, ModObject.itemBrokenSpawner.getUnlocalisedName());
@@ -243,6 +244,7 @@ public class ClientProxy extends CommonProxy {
     ClientUtil.registerRenderer(EnderIO.itemCoordSelector, ModObject.itemCoordSelector.getUnlocalisedName());
     DarkSteelItems.registerItemRenderers();
     Buckets.registerRenderers();
+    EnderIO.itemRemoteInvAccess.registerRenderers();
 
     // Item Models
     ItemModelRegistry.create();
