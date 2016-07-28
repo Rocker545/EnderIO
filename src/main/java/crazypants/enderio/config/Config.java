@@ -91,6 +91,8 @@ public final class Config {
 
   public static boolean registerRecipes = true;
 
+  public static boolean allowFovControlsInSurvivalMode = false;
+
   public static boolean jeiUseShortenedPainterRecipes = true;
 
   public static boolean reinforcedObsidianEnabled = true;
@@ -111,7 +113,6 @@ public final class Config {
 
   public static int recipeLevel = 2;
   public static boolean addPeacefulRecipes = false;
-  public static boolean allowExternalTickSpeedup = true;
   public static boolean createSyntheticRecipes = true;
 
   public static boolean detailedPowerTrackingEnabled = false;
@@ -247,6 +248,8 @@ public final class Config {
   public static double darkSteelGliderHorizontalSpeed = 0.03;
   public static double darkSteelGliderVerticalSpeed = -0.05;
   public static double darkSteelGliderVerticalSpeedSprinting = -0.15;
+
+  public static int darkSteelElytraCost = 10;
 
   public static int darkSteelGogglesOfRevealingCost = 4;
 
@@ -411,7 +414,7 @@ public final class Config {
   public static boolean killerJoeMustSee = false;
   public static boolean killerPvPoffDisablesSwing = false;
   public static boolean killerPvPoffIsIgnored = false;
-  public static boolean killerMending = false;
+  public static boolean killerMendingEnabled = true;
 
   public static boolean allowTileEntitiesAsPaintSource = true;
 
@@ -644,11 +647,6 @@ public final class Config {
             "Automatically create alloy smelter recipes with double and tripple inputs and different slot allocations (1+1+1, 2+1, 1+2, 3 and 2) for single-input recipes.")
         .getBoolean(createSyntheticRecipes);
 
-    allowExternalTickSpeedup = config.get(sectionMisc.name, "allowExternalTickSpeedup", allowExternalTickSpeedup,
-        "Allows machines to run faster if another mod speeds up the tickrate. Running at higher tickrates is "
-            + "unsupported. Disable this if you run into any kind of problem.")
-        .getBoolean(allowExternalTickSpeedup);
-    
     redstoneConduitsShowState = config.get(sectionMisc.name, "redstoneConduitsShowState", redstoneConduitsShowState,
         "If set to false redstone conduits will look the same whether they are recieving a signal or not. This can help with performance.")
         .getBoolean(redstoneConduitsShowState);
@@ -946,6 +944,9 @@ public final class Config {
     darkSteelGliderVerticalSpeedSprinting = config.get(sectionDarkSteel.name, "darkSteelGliderVerticalSpeedSprinting", darkSteelGliderVerticalSpeedSprinting,
         "Rate of altitude loss when sprinting and gliding.").getDouble(darkSteelGliderVerticalSpeedSprinting);
 
+    darkSteelElytraCost = config.get(sectionDarkSteel.name, "darkSteelElytraCost", darkSteelElytraCost, "Number of levels required for the 'Elytra' upgrade.")
+        .getInt(darkSteelElytraCost);
+
     darkSteelSoundLocatorCost = config.get(sectionDarkSteel.name, "darkSteelSoundLocatorCost", darkSteelSoundLocatorCost,
         "Number of levels required for the 'Sound Locator' upgrade.").getInt(darkSteelSoundLocatorCost);
     darkSteelSoundLocatorRange = config.get(sectionDarkSteel.name, "darkSteelSoundLocatorRange", darkSteelSoundLocatorRange,
@@ -1233,8 +1234,8 @@ public final class Config {
         .get(sectionKiller.name, "killerPvPoffIsIgnored", killerPvPoffIsIgnored,
             "Set whether the Killer Joe ignores PvP settings and always hits players (killerPvPoffDisablesSwing must be off for this to work).")
         .getBoolean();
-    killerMending = config
-        .get(sectionKiller.name, "killerMending", killerMending, "If enabled, picked up XP will be used for the enchantement 'Mending' on the weapon.")
+    killerMendingEnabled = config
+        .get(sectionKiller.name, "killerMending", killerMendingEnabled, "If enabled, picked up XP will be used for the enchantement 'Mending' on the weapon.")
         .getBoolean();
 
     // Add deprecated comment
@@ -1387,6 +1388,9 @@ public final class Config {
         "If true, the mob list will be shown always, otherwise only it will only be shown on 'extended' mode (e.g. with shift pressed)");
     topShowTanksByDefault = config.getBoolean("topShowTanksByDefault", sectionTOP.name, topShowTanksByDefault,
         "If true, the tank content will be shown always, otherwise only it will only be shown on 'extended' mode (e.g. with shift pressed)");
+
+    allowFovControlsInSurvivalMode = config.getBoolean("allowFovControlsInSurvivalMode", sectionMisc.name, allowFovControlsInSurvivalMode,
+        "If true, the FOV keyboard controls can be used in survival and advanture mode. Otherwise they are limited to create and spectator modes.");
 
     CapacitorKey.processConfig(config);
   }

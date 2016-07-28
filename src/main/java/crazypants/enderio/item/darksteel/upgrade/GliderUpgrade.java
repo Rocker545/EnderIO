@@ -1,11 +1,11 @@
 package crazypants.enderio.item.darksteel.upgrade;
 
+import crazypants.enderio.config.Config;
+import crazypants.enderio.item.darksteel.DarkSteelItems;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import crazypants.enderio.config.Config;
-import crazypants.enderio.item.darksteel.DarkSteelItems;
 
 public class GliderUpgrade extends AbstractUpgrade {
 
@@ -40,8 +40,9 @@ public class GliderUpgrade extends AbstractUpgrade {
     if(stack == null || stack.getItem() != DarkSteelItems.itemDarkSteelChestplate) {
       return false;
     }
-    GliderUpgrade up = loadFromItem(stack);
-    if(up == null) {
+    ElytraUpgrade elytraUpgrade = ElytraUpgrade.loadFromItem(stack);
+    GliderUpgrade gliderUpgrade = GliderUpgrade.loadFromItem(stack);
+    if (elytraUpgrade == null && gliderUpgrade == null) {
       return true;
     }
     return false;

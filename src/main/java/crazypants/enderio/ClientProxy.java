@@ -24,6 +24,7 @@ import crazypants.enderio.item.darksteel.upgrade.UpgradeRenderDispatcher;
 import crazypants.enderio.item.skull.EndermanSkullRenderer;
 import crazypants.enderio.item.skull.TileEndermanSkull;
 import crazypants.enderio.machine.capbank.TileCapBank;
+import crazypants.enderio.machine.capbank.network.ClientNetworkManager;
 import crazypants.enderio.machine.capbank.render.CapBankRenderer;
 import crazypants.enderio.machine.enchanter.EnchanterModelRenderer;
 import crazypants.enderio.machine.enchanter.TileEnchanter;
@@ -229,6 +230,7 @@ public class ClientProxy extends CommonProxy {
     registerRenderers(EnderIO.itemFunctionUpgrade);
     registerRenderers(EnderIO.itemFunctionUpgrade);
     registerRenderers(EnderIO.itemSoulVessel);
+    registerRenderers(EnderIO.itemConduitProbe);
     registerRenderers(EnderIO.itemPowerConduit);
     registerRenderers(EnderIO.itemLiquidConduit);
     registerRenderers(EnderIO.itemItemConduit);
@@ -264,7 +266,8 @@ public class ClientProxy extends CommonProxy {
   @Override
   public void init() {
     super.init();
-    SmartModelAttacher.registerColoredBlocksAndItems();        
+    SmartModelAttacher.registerColoredBlocksAndItems();
+    MinecraftForge.EVENT_BUS.register(ClientNetworkManager.getInstance());
   }
 
   private void registerRenderers(IHaveRenderers bob) {

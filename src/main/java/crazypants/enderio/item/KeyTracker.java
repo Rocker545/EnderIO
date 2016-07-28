@@ -23,72 +23,94 @@ import crazypants.enderio.sound.SoundRegistry;
 import crazypants.util.BaublesUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.multiplayer.PlayerControllerMP;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
+import net.minecraftforge.client.event.EntityViewRenderEvent.FOVModifier;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent.KeyInputEvent;
 
+import static crazypants.enderio.config.Config.allowFovControlsInSurvivalMode;
+
 public class KeyTracker {
 
   public static final KeyTracker instance = new KeyTracker();
-  
+
   private final KeyBinding glideKey;
-  
+
   private final KeyBinding soundDetectorKey;
-  
+
   private final KeyBinding nightVisionKey;
-  
+
   private final KeyBinding stepAssistKey;
-  
+
   private final KeyBinding speedKey;
-  
+
   private final KeyBinding jumpKey;
-  
+
   private final KeyBinding gogglesKey;
-  
+
   private final KeyBinding yetaWrenchMode;
-  
+
   private final KeyBinding magnetKey;
-  
+
   private final KeyBinding topKey;
+  
+  private final KeyBinding fovPlusKey, fovMinusKey, fovPlusKeyFast, fovMinusKeyFast, fovResetKey;
 
   public KeyTracker() {
-    glideKey = new KeyBinding(EnderIO.lang.localize("keybind.glidertoggle"), Keyboard.KEY_G, EnderIO.lang.localize("category.darksteelarmor"));
+    glideKey = new KeyBinding("enderio.keybind.glidertoggle", Keyboard.KEY_G, "enderio.category.darksteelarmor");
     ClientRegistry.registerKeyBinding(glideKey);
-    soundDetectorKey = new KeyBinding(EnderIO.lang.localize("keybind.soundlocator"), Keyboard.KEY_L, EnderIO.lang.localize("category.darksteelarmor"));
-    ClientRegistry.registerKeyBinding(soundDetectorKey);        
-    nightVisionKey = new KeyBinding(EnderIO.lang.localize("keybind.nightvision"), Keyboard.KEY_P, EnderIO.lang.localize("category.darksteelarmor"));
+    soundDetectorKey = new KeyBinding("enderio.keybind.soundlocator", Keyboard.KEY_L, "enderio.category.darksteelarmor");
+    ClientRegistry.registerKeyBinding(soundDetectorKey);
+    nightVisionKey = new KeyBinding("enderio.keybind.nightvision", Keyboard.KEY_P, "enderio.category.darksteelarmor");
     ClientRegistry.registerKeyBinding(nightVisionKey);
-    gogglesKey = new KeyBinding(EnderIO.lang.localize("keybind.gogglesofrevealing"), Keyboard.KEY_R, EnderIO.lang.localize("category.darksteelarmor"));
+    gogglesKey = new KeyBinding("enderio.keybind.gogglesofrevealing", Keyboard.KEY_R, "enderio.category.darksteelarmor");
     // ClientRegistry.registerKeyBinding(gogglesKey);
-    
-    stepAssistKey = new KeyBinding(EnderIO.lang.localize("keybind.stepassist"), Keyboard.KEY_NONE, EnderIO.lang.localize("category.darksteelarmor"));
+
+    stepAssistKey = new KeyBinding("enderio.keybind.stepassist", Keyboard.KEY_NONE, "enderio.category.darksteelarmor");
     ClientRegistry.registerKeyBinding(stepAssistKey);
-    
-    speedKey = new KeyBinding(EnderIO.lang.localize("keybind.speed"), Keyboard.KEY_NONE, EnderIO.lang.localize("category.darksteelarmor"));
+
+    speedKey = new KeyBinding("enderio.keybind.speed", Keyboard.KEY_NONE, "enderio.category.darksteelarmor");
     ClientRegistry.registerKeyBinding(speedKey);
-    
-    jumpKey = new KeyBinding(EnderIO.lang.localize("keybind.jump"), Keyboard.KEY_NONE, EnderIO.lang.localize("category.darksteelarmor"));
+
+    jumpKey = new KeyBinding("enderio.keybind.jump", Keyboard.KEY_NONE, "enderio.category.darksteelarmor");
     ClientRegistry.registerKeyBinding(jumpKey);
-    
-    yetaWrenchMode = new KeyBinding(EnderIO.lang.localize("keybind.yetawrenchmode"), Keyboard.KEY_Y, EnderIO.lang.localize("category.tools"));
+
+    yetaWrenchMode = new KeyBinding("enderio.keybind.yetawrenchmode", Keyboard.KEY_Y, "enderio.category.tools");
     ClientRegistry.registerKeyBinding(yetaWrenchMode);
 
-    magnetKey = new KeyBinding(EnderIO.lang.localize("keybind.magnet"), Keyboard.CHAR_NONE, EnderIO.lang.localize("category.tools"));
+    magnetKey = new KeyBinding("enderio.keybind.magnet", Keyboard.CHAR_NONE, "enderio.category.tools");
     ClientRegistry.registerKeyBinding(magnetKey);
 
-    topKey = new KeyBinding(EnderIO.lang.localize("keybind.top"), Keyboard.CHAR_NONE, EnderIO.lang.localize("category.darksteelarmor"));
+    topKey = new KeyBinding("enderio.keybind.top", Keyboard.CHAR_NONE, "enderio.category.darksteelarmor");
     ClientRegistry.registerKeyBinding(topKey);
+
+    fovPlusKey = new KeyBinding("enderio.keybind.fovplus", Keyboard.CHAR_NONE, "key.categories.misc");
+    ClientRegistry.registerKeyBinding(fovPlusKey);
+
+    fovMinusKey = new KeyBinding("enderio.keybind.fovminus", Keyboard.CHAR_NONE, "key.categories.misc");
+    ClientRegistry.registerKeyBinding(fovMinusKey);
+
+    fovPlusKeyFast = new KeyBinding("enderio.keybind.fovplusfast", Keyboard.CHAR_NONE, "key.categories.misc");
+    ClientRegistry.registerKeyBinding(fovPlusKeyFast);
+
+    fovMinusKeyFast = new KeyBinding("enderio.keybind.fovminusfast", Keyboard.CHAR_NONE, "key.categories.misc");
+    ClientRegistry.registerKeyBinding(fovMinusKeyFast);
+
+    fovResetKey = new KeyBinding("enderio.keybind.fovreset", Keyboard.CHAR_NONE, "key.categories.misc");
+    ClientRegistry.registerKeyBinding(fovResetKey);
   }
   
   @SubscribeEvent
   public void onKeyInput(KeyInputEvent event) {   
     handleGlide();
+    handleElytra();
     handleSoundDetector();
     handleNightVision();
     handleYetaWrench();
@@ -98,6 +120,7 @@ public class KeyTracker {
     handleJump();
     handleMagnet();
     handleTop();
+    handleFov();
   }
 
   private void sendEnabledChatMessage(String messageBase, boolean isActive) {
@@ -227,6 +250,15 @@ public class KeyTracker {
     }
   }
   
+  private void handleElytra() {
+    if (!DarkSteelController.instance.isElytraUpgradeEquipped(Minecraft.getMinecraft().thePlayer)) {
+      return;
+    }
+    if (glideKey.isPressed()) {
+      toggleDarkSteelController(Type.ELYTRA, "darksteel.upgrade.elytra");
+    }
+  }
+
   private void handleNightVision() {
     EntityPlayer player = Minecraft.getMinecraft().thePlayer;
     if(!DarkSteelController.instance.isNightVisionUpgradeEquipped(player)){
@@ -261,6 +293,49 @@ public class KeyTracker {
     if (topKey.isPressed() && DarkSteelController.instance.isTopUpgradeEquipped(player)) {
       boolean isActive = !DarkSteelController.instance.isTopActive(player);
       DarkSteelController.instance.setTopActive(player, isActive);
+    }
+  }
+
+  private double fovLevelLast = 1;
+  private double fovLevelNext = 1;
+  private long lastWorldTime = 0;
+
+  @SubscribeEvent
+  public void onFov(FOVModifier event) {
+    final PlayerControllerMP playerController = Minecraft.getMinecraft().playerController;
+    if (!allowFovControlsInSurvivalMode && (playerController == null || playerController.gameIsSurvivalOrAdventure())) {
+      return;
+    }
+    long worldTime = EnderIO.proxy.getTickCount();
+    while (worldTime > lastWorldTime) {
+      if (worldTime - lastWorldTime > 10) {
+        lastWorldTime = worldTime;
+      } else {
+        lastWorldTime++;
+      }
+      fovLevelLast = fovLevelNext;
+      if (fovPlusKeyFast.isKeyDown()) {
+        fovLevelNext *= 1.05;
+      } else if (fovMinusKeyFast.isKeyDown()) {
+        fovLevelNext /= 1.05;
+      } else if (fovPlusKey.isKeyDown()) {
+        fovLevelNext *= 1.01;
+      } else if (fovMinusKey.isKeyDown()) {
+        fovLevelNext /= 1.01;
+      }
+      if (fovLevelNext > 1.3) {
+        fovLevelNext = 1.3;
+      } else if (fovLevelNext < .05) {
+        fovLevelNext = .05;
+      }
+    }
+    double val = fovLevelNext * event.getRenderPartialTicks() + fovLevelLast * (1 - event.getRenderPartialTicks());
+    event.setFOV((float) (event.getFOV() * val));
+  }
+
+  private void handleFov() {
+    if (fovResetKey.isPressed()) {
+      fovLevelLast = fovLevelNext = 1;
     }
   }
 

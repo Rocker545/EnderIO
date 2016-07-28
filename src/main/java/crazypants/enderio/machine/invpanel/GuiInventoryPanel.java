@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import javax.annotation.Nullable;
+
 import org.lwjgl.opengl.GL11;
 
 import com.enderio.core.client.gui.button.IconButton;
@@ -72,8 +74,7 @@ public class GuiInventoryPanel extends GuiMachineBase<TileInventoryPanel> {
   private final ToggleButton btnSync;
   private final GuiToolTip ttRefill;
   private final VScrollbar scrollbar;
-  private final MultiIconButton btnClear;
-  private final GuiToolTip ttSetReceipe;
+  private final MultiIconButton btnClear;  
 
   private int scrollPos;
   private int ghostSlotTooltipStacksize;
@@ -210,17 +211,6 @@ public class GuiInventoryPanel extends GuiMachineBase<TileInventoryPanel> {
     addToolTip(ttRefill);
 
     list.clear();
-
-    SpecialTooltipHandler.addTooltipFromResources(list, "enderio.gui.inventorypanel.tooltip.setrecipe.line");
-    ttSetReceipe = new GuiToolTip(btnRefill, list) {
-      @Override
-      public boolean shouldDraw() {
-        return super.shouldDraw() && getContainer().hasCraftingRecipe();
-      }
-    };
-    addToolTip(ttSetReceipe);
-
-    list.clear();
     SpecialTooltipHandler.addTooltipFromResources(list, "enderio.gui.inventorypanel.tooltip.clear.line");
     btnClear.setToolTip(list.toArray(new String[list.size()]));
 
@@ -240,18 +230,22 @@ public class GuiInventoryPanel extends GuiMachineBase<TileInventoryPanel> {
     addToolTip(new GuiToolTip(btnAddStoredRecipe, list));
   }
 
-  @Override
-  public void onGuiClosed() {
+  public void syncSettingsChange() {
     int sortMode = (view.getSortOrder().ordinal() << 1);
     if(view.isSortOrderInverted()) {
       sortMode |= 1;
     }
+    String filterText;
     if (!btnSync.isSelected() || tfFilterExternalValue == null || !tfFilterExternalValue.equals(tfFilter.getText())) {
-      getTileEntity().setGuiParameter(sortMode, tfFilter.getText(), btnSync.isSelected());
+      filterText = tfFilter.getText();
     } else {
-      getTileEntity().setGuiParameter(sortMode, "", btnSync.isSelected());
+      filterText = "";
     }
-    super.onGuiClosed();
+    if (getTileEntity().getGuiSortMode() != sortMode || getTileEntity().getGuiSync() != btnSync.isSelected()
+        || !org.apache.commons.lang3.StringUtils.equals(getTileEntity().getGuiFilterString(), filterText)) {
+      PacketHandler.INSTANCE.sendToServer(new PacketGuiSettings(getContainer().windowId, sortMode, filterText, btnSync.isSelected()));
+      getTileEntity().setGuiParameter(sortMode, tfFilter.getText(), btnSync.isSelected());
+    }
   }
 
   public void setCraftingHelper(CraftingHelper craftingHelper) {
@@ -260,7 +254,6 @@ public class GuiInventoryPanel extends GuiMachineBase<TileInventoryPanel> {
     }
     this.craftingHelper = craftingHelper;
     ttRefill.setIsVisible(craftingHelper != null);
-    ttSetReceipe.setIsVisible(craftingHelper == null);
     if(craftingHelper != null) {
       craftingHelper.install();
     }
@@ -305,6 +298,7 @@ public class GuiInventoryPanel extends GuiMachineBase<TileInventoryPanel> {
 
   @Override
   protected void drawGuiContainerBackgroundLayer(float par1, int mouseX, int mouseY) {
+    syncSettingsChange();
     GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
     bindGuiTexture();
     int sx = guiLeft;
@@ -313,15 +307,11 @@ public class GuiInventoryPanel extends GuiMachineBase<TileInventoryPanel> {
     drawTexturedModalRect(sx + 24, sy, 0, 0, 232, ySize);
     drawTexturedModalRect(sx + 24 + 232, sy, 232, 0, 24, 68);
 
-    if(craftingHelper != null) {
+    if(craftingHelper != null || getContainer().hasCraftingRecipe()) {
       boolean hover = btnRefill.contains(mouseX - sx, mouseY - sy);
       int iconX = hover ? (isShiftKeyDown() ? 48 : 24) : 0;
       drawTexturedModalRect(sx + btnRefill.x - 2, sy + btnRefill.y - 2, iconX, 232, 24, 24);
-    } else if(getContainer().hasCraftingRecipe()) {
-      boolean hover = btnRefill.contains(mouseX - sx, mouseY - sy);
-      int iconX = hover ? 96 : 72;
-      drawTexturedModalRect(sx + btnRefill.x - 2, sy + btnRefill.y - 2, iconX, 232, 24, 24);
-    }
+    } 
 
     TileInventoryPanel te = getTileEntity();
 
@@ -526,7 +516,7 @@ public class GuiInventoryPanel extends GuiMachineBase<TileInventoryPanel> {
     return (InventoryPanelContainer) inventorySlots;
   }
 
-  public InventoryDatabaseClient getDatabase() {
+  public @Nullable InventoryDatabaseClient getDatabase() {
     return getTileEntity().getDatabaseClient();
   }
 
@@ -608,13 +598,11 @@ public class GuiInventoryPanel extends GuiMachineBase<TileInventoryPanel> {
     y -= guiTop;
 
     if(btnRefill.contains(x, y)) {
-      if(craftingHelper != null) {
-        playClickSound();
-        craftingHelper.refill(this, isShiftKeyDown() ? 64 : 1);
-      } else if(getContainer().hasCraftingRecipe()) {
+      if(getContainer().hasCraftingRecipe()) {
         playClickSound();
         setCraftingHelper(CraftingHelper.createFromSlots(getContainer().getCraftingGridSlots()));
-      }
+        craftingHelper.refill(this, isShiftKeyDown() ? 64 : 1);
+      } 
     }
 
     if(btnAddStoredRecipe.contains(x, y)) {
@@ -631,6 +619,7 @@ public class GuiInventoryPanel extends GuiMachineBase<TileInventoryPanel> {
     if(btnReturnArea.contains(x, y)) {
       TileInventoryPanel te = getTileEntity();
       playClickSound();
+      PacketHandler.INSTANCE.sendToServer(new PacketSetExtractionDisabled(getContainer().windowId, !te.isExtractionDisabled()));
       te.setExtractionDisabled(!te.isExtractionDisabled());
     }
   }

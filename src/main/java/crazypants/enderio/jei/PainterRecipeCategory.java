@@ -16,7 +16,7 @@ import crazypants.enderio.machine.IMachineRecipe.ResultStack;
 import crazypants.enderio.machine.MachineRecipeRegistry;
 import crazypants.enderio.machine.painter.ContainerPainter;
 import crazypants.enderio.machine.painter.GuiPainter;
-import crazypants.enderio.machine.painter.recipe.BasicPainterTemplate;
+import crazypants.enderio.machine.painter.recipe.AbstractPainterTemplate;
 import crazypants.enderio.machine.power.PowerDisplayUtil;
 import mezz.jei.Internal;
 import mezz.jei.api.IGuiHelper;
@@ -39,7 +39,6 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.GameData;
 
 import static crazypants.enderio.machine.painter.ContainerPainter.FIRST_INVENTORY_SLOT;
 import static crazypants.enderio.machine.painter.ContainerPainter.FIRST_RECIPE_SLOT;
@@ -57,16 +56,16 @@ public class PainterRecipeCategory extends BlankRecipeCategory<PainterRecipeCate
   @SuppressWarnings("null")
   private static List<PainterRecipeWrapper> splitRecipes(@Nonnull Collection<IMachineRecipe> recipes, List<ItemStack> validItems) {
     long start = System.nanoTime();
-    List<BasicPainterTemplate<?>> basicPainterTemplates = new ArrayList<BasicPainterTemplate<?>>();
+    List<AbstractPainterTemplate<?>> basicPainterTemplates = new ArrayList<AbstractPainterTemplate<?>>();
     for (IMachineRecipe recipe : recipes) {
-      if (recipe instanceof BasicPainterTemplate) {
-        basicPainterTemplates.add((BasicPainterTemplate<?>) recipe);
+      if (recipe instanceof AbstractPainterTemplate<?>) {
+        basicPainterTemplates.add((AbstractPainterTemplate<?>) recipe);
       }
     }
 
     List<PainterRecipeWrapper> recipesWrappers = new ArrayList<PainterRecipeWrapper>();
     for (ItemStack target : validItems) {
-      for (BasicPainterTemplate<?> basicPainterTemplate : basicPainterTemplates) {
+      for (AbstractPainterTemplate<?> basicPainterTemplate : basicPainterTemplates) {
         if (basicPainterTemplate.isValidTarget(target)) {
           recipesWrappers.add(new PainterRecipeWrapper(basicPainterTemplate, target, new ArrayList<ItemStack>(), new ArrayList<ItemStack>()));
         }
@@ -107,13 +106,13 @@ public class PainterRecipeCategory extends BlankRecipeCategory<PainterRecipeCate
 
   public static class PainterRecipeWrapper extends BlankRecipeWrapper {
 
-    final BasicPainterTemplate<?> recipe;
+    final AbstractPainterTemplate<?> recipe;
     final int energyRequired;
     final @Nonnull ItemStack target;
     final @Nonnull List<ItemStack> paints;
     final @Nonnull List<ItemStack> results;
 
-    public PainterRecipeWrapper(@Nonnull BasicPainterTemplate<?> recipe, @Nonnull ItemStack target, @Nonnull List<ItemStack> paints,
+    public PainterRecipeWrapper(@Nonnull AbstractPainterTemplate<?> recipe, @Nonnull ItemStack target, @Nonnull List<ItemStack> paints,
         @Nonnull List<ItemStack> results) {
       this.recipe = recipe;
       this.energyRequired = recipe.getEnergyRequired();
@@ -153,7 +152,8 @@ public class PainterRecipeCategory extends BlankRecipeCategory<PainterRecipeCate
     registry.addRecipeClickArea(GuiPainter.class, 155, 42, 16, 16, PainterRecipeCategory.UID);
     registry.addRecipeCategoryCraftingItem(new ItemStack(EnderIO.blockPainter), PainterRecipeCategory.UID);
 
-    registry.addRecipes(splitRecipes(MachineRecipeRegistry.instance.getRecipesForMachine(ModObject.blockPainter.getUnlocalisedName()).values(), getValidItems()));
+    registry.addRecipes(
+        splitRecipes(MachineRecipeRegistry.instance.getRecipesForMachine(ModObject.blockPainter.getUnlocalisedName()).values(), ItemHelper.getValidItems()));
 
     registry.getRecipeTransferRegistry().addRecipeTransferHandler(ContainerPainter.class, PainterRecipeCategory.UID, FIRST_RECIPE_SLOT, NUM_RECIPE_SLOT,
         FIRST_INVENTORY_SLOT, NUM_INVENTORY_SLOT);
@@ -272,16 +272,6 @@ public class PainterRecipeCategory extends BlankRecipeCategory<PainterRecipeCate
       guiItemStacks.set(2, currentRecipe.results);
   }
   
-  private static @Nonnull List<ItemStack> getValidItems() {
-    List<ItemStack> list = new ArrayList<ItemStack>();
-    for (Item item : GameData.getItemRegistry()) {
-      for (CreativeTabs tab : item.getCreativeTabs()) {
-        item.getSubItems(item, tab, list);
-      }
-    }
-    return list;
-  }
-
   private static @Nonnull List<ItemStack> getLimitedItems() {
     List<ItemStack> list = new ArrayList<ItemStack>();
     for (Block block : new Block[] { Blocks.STONE, Blocks.COBBLESTONE, Blocks.GRASS, Blocks.DIRT, Blocks.PLANKS, Blocks.GLASS, Blocks.STONE_STAIRS,

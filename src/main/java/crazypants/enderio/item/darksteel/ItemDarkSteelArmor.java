@@ -4,7 +4,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import com.enderio.core.api.client.gui.IAdvancedTooltipProvider;
+import com.enderio.core.common.transform.EnderCoreMethods.IElytraFlyingProvider;
 import com.enderio.core.common.transform.EnderCoreMethods.IOverlayRenderAware;
 import com.enderio.core.common.util.ItemUtil;
 import com.google.common.collect.Multimap;
@@ -13,9 +16,19 @@ import cofh.api.energy.IEnergyContainerItem;
 import crazypants.enderio.EnderIO;
 import crazypants.enderio.EnderIOTab;
 import crazypants.enderio.config.Config;
+import crazypants.enderio.item.IHasPlayerRenderer;
 import crazypants.enderio.item.PowerBarOverlayRenderHelper;
+import crazypants.enderio.item.darksteel.PacketUpgradeState.Type;
+import crazypants.enderio.item.darksteel.upgrade.ElytraUpgrade;
 import crazypants.enderio.item.darksteel.upgrade.EnergyUpgrade;
+import crazypants.enderio.item.darksteel.upgrade.GliderUpgrade;
 import crazypants.enderio.item.darksteel.upgrade.IDarkSteelUpgrade;
+import crazypants.enderio.item.darksteel.upgrade.IRenderUpgrade;
+import crazypants.enderio.item.darksteel.upgrade.PaintedHelmetLayer;
+import crazypants.enderio.network.PacketHandler;
+import crazypants.enderio.paint.PainterUtil2;
+import crazypants.enderio.paint.PainterUtil2.IWithPaintName;
+import net.minecraft.client.model.ModelBiped;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -44,7 +57,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
     @Interface(iface = "thaumcraft.api.items.IRevealer", modid = "Thaumcraft")
 })
 public class ItemDarkSteelArmor extends ItemArmor implements IEnergyContainerItem, ISpecialArmor, IAdvancedTooltipProvider, IDarkSteelItem, 
-    IOverlayRenderAware { //, IGoggles, IRevealer, IVisDiscountGear, //TODO: 1.9 Thaumcraft
+    IOverlayRenderAware, IHasPlayerRenderer, IWithPaintName, IElytraFlyingProvider { // , IGoggles, IRevealer, IVisDiscountGear, //TODO: 1.9 Thaumcraft
 
 
   public static final ArmorMaterial MATERIAL = createMaterial();
@@ -151,11 +164,23 @@ public class ItemDarkSteelArmor extends ItemArmor implements IEnergyContainerIte
     Iterator<IDarkSteelUpgrade> iter = DarkSteelRecipeManager.instance.recipeIterator();
     while (iter.hasNext()) {
       IDarkSteelUpgrade upgrade = iter.next();
-      if (!(upgrade instanceof EnergyUpgrade) && upgrade.canAddToItem(is)) {
+      if (!(upgrade instanceof EnergyUpgrade || upgrade instanceof GliderUpgrade || upgrade instanceof ElytraUpgrade) && upgrade.canAddToItem(is)) {
         upgrade.writeToItem(is);
       }
     }
     
+    if (GliderUpgrade.INSTANCE.canAddToItem(is)) {
+      ItemStack is2 = is.copy();
+      GliderUpgrade.INSTANCE.writeToItem(is2);
+      par3List.add(is2);
+      if (ElytraUpgrade.INSTANCE.canAddToItem(is)) {
+        ItemStack is3 = is.copy();
+        ElytraUpgrade.INSTANCE.writeToItem(is3);
+        par3List.add(is3);
+      }
+      return;
+    }
+
     par3List.add(is);
   }
 
@@ -182,6 +207,9 @@ public class ItemDarkSteelArmor extends ItemArmor implements IEnergyContainerIte
 
   @Override
   public void addBasicEntries(ItemStack itemstack, EntityPlayer entityplayer, List<String> list, boolean flag) {
+    if (armorType == EntityEquipmentSlot.HEAD) {
+      list.add(PainterUtil2.getTooltTipText(itemstack));
+    }
     DarkSteelRecipeManager.instance.addBasicTooltipEntries(itemstack, entityplayer, list, flag);
   }
 
@@ -341,6 +369,57 @@ public class ItemDarkSteelArmor extends ItemArmor implements IEnergyContainerIte
   @Override
   public void renderItemOverlayIntoGUI(ItemStack stack, int xPosition, int yPosition) {
     PowerBarOverlayRenderHelper.instance_upgradeable.render(stack, xPosition, yPosition);
+  }
+
+  @Override
+  @Nullable
+  @SideOnly(Side.CLIENT)
+  public IRenderUpgrade getRender() {
+    if (armorType == EntityEquipmentSlot.HEAD) {
+      return PaintedHelmetLayer.instance;
+    }
+    return null;
+  }
+
+  @SuppressWarnings("null")
+  @Override
+  @SideOnly(Side.CLIENT)
+  public ModelBiped getArmorModel(EntityLivingBase entityLiving, ItemStack itemStack, EntityEquipmentSlot armorSlot, ModelBiped _default) {
+    if (armorType == EntityEquipmentSlot.HEAD && itemStack != null && itemStack.hasTagCompound() && itemStack.getTagCompound().hasKey("DSPAINT")) {
+      return new ModelBiped() {
+        @Override
+        public void render(Entity entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
+        }
+      };
+    }
+    return null;
+  }
+
+  @SuppressWarnings("null")
+  @Override
+  public String getPaintName(ItemStack itemStack) {
+    if (itemStack != null && itemStack.hasTagCompound() && itemStack.getTagCompound().hasKey("DSPAINT")) {
+      ItemStack paintSource = ItemStack.loadItemStackFromNBT(itemStack.getTagCompound().getCompoundTag("DSPAINT"));
+      if (paintSource == null) {
+        return null;
+      }
+      return paintSource.getDisplayName();
+    }
+    return null;
+  }
+
+  @Override
+  public boolean isElytraFlying(EntityLivingBase entity, ItemStack itemstack) {
+    if (entity instanceof EntityPlayer && DarkSteelController.instance.isElytraUpgradeEquipped(itemstack)
+        && DarkSteelController.instance.isElytraActive((EntityPlayer) entity)) {
+      if (entity.onGround && !entity.worldObj.isRemote) {
+        DarkSteelController.instance.setActive((EntityPlayer) entity, Type.ELYTRA, false);
+        PacketHandler.INSTANCE.sendToDimension(new PacketUpgradeState(Type.ELYTRA, false, entity.getEntityId()), entity.worldObj.provider.getDimension());
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 
 }

@@ -585,9 +585,6 @@ enderio.gui.inventorypanel.tooltip.refill.line2=Click to place items
 enderio.gui.inventorypanel.tooltip.refill.line3=for one crafting operation,
 enderio.gui.inventorypanel.tooltip.refill.line4=shift click to place as
 enderio.gui.inventorypanel.tooltip.refill.line5=many items as possible.
-enderio.gui.inventorypanel.tooltip.setrecipe.line1=Learn the current crafting recipe
-enderio.gui.inventorypanel.tooltip.setrecipe.line2=Allows the refilling for the
-enderio.gui.inventorypanel.tooltip.setrecipe.line3=current recipe from the network.
 enderio.gui.inventorypanel.tooltip.clear.line1=Clear crafting grid
 enderio.gui.inventorypanel.tooltip.clear.line2=Moves all items to the return area
 enderio.gui.inventorypanel.tooltip.fuelTank=Nutrient Tank
@@ -787,6 +784,10 @@ item.itemMagnet.tooltip.detailed.line1=Pulls nearby item towards you
 item.itemMagnet.tooltip.detailed.line2=Shift-R-Click to enable / disable
 item.itemMagnet.tooltip.detailed.line3=Must be powered, active and in the
 item.itemMagnet.tooltip.detailed.line4=hot bar (or a Baubles slot) to function
+item.itemMagnet.everywhere.tooltip.detailed.line1=Pulls nearby item towards you
+item.itemMagnet.everywhere.tooltip.detailed.line2=Shift-R-Click to enable / disable
+item.itemMagnet.everywhere.tooltip.detailed.line3=Must be powered, active and in the
+item.itemMagnet.everywhere.tooltip.detailed.line4=inventory (or a Baubles slot) to function
 
 item.enderio.itemConduitProbe.name=Conduit Probe
 item.enderio.itemConduitProbe.tooltip.detailed.line1=In probe mode R-Click on a conduit
@@ -881,6 +882,11 @@ enderio.darksteel.upgrade.glider.name=Glider
 enderio.darksteel.upgrade.glider.tooltip.detailed.line1=Enables gliding
 enderio.darksteel.upgrade.glider.enabled=Glider Active
 enderio.darksteel.upgrade.glider.disabled=Glider Disabled
+
+enderio.darksteel.upgrade.elytra.name=Elytra
+enderio.darksteel.upgrade.elytra.tooltip.detailed.line1=Enables flying
+enderio.darksteel.upgrade.elytra.enabled=Elytra Active
+enderio.darksteel.upgrade.elytra.disabled=Elytra Disabled
 
 enderio.darksteel.upgrade.sound.name=Sound Locator
 enderio.darksteel.upgrade.sound.tooltip.detailed.line1=Displays the location of
@@ -1245,7 +1251,7 @@ enderio.config.spawner.tooltip=I ran out of witty tooltips.
 //Keybinds/Waila/NEI/Tooltips
 enderio.category.darksteelarmor=Dark Steel Armor
 enderio.category.tools=Tools
-enderio.keybind.glidertoggle=Glider Toggle
+enderio.keybind.glidertoggle=Glider/Elytra Toggle
 enderio.keybind.gogglesofrevealing=Goggles of Revealing
 enderio.keybind.nightvision=Night Vision
 enderio.keybind.soundlocator=Sound Locator
@@ -1255,6 +1261,11 @@ enderio.keybind.stepassist=Step Assist
 enderio.keybind.yetawrenchmode=Yeta Wrench Mode
 enderio.keybind.magnet=Toggle Electromagnet
 enderio.keybind.top=Toggle The One Probe (Helmet Upgrade)
+enderio.keybind.fovplus=Camera: Zoom out (creative only)
+enderio.keybind.fovminus=Camera: Zoom in (creative only)
+enderio.keybind.fovplusfast=Camera: Zoom out fast (creative only)
+enderio.keybind.fovminusfast=Camera: Zoom in fast (creative only)
+enderio.keybind.fovreset=Camera: Reset Zoom (creative only)
 enderio.nei.alloysmelter=Alloy Smelter
 enderio.nei.enchanter=Enchanter
 enderio.nei.sagmill=SAG Mill
@@ -1387,11 +1398,10 @@ enderio.remoteinv.chat.notloaded=ERROR: Target is not loaded
 enderio.remoteinv.chat.invalidtarget=ERROR: Target does not exist
 enderio.remoteinv.chat.outofpower=ERROR: Out of power
 enderio.remoteinv.chat.outoffluid=ERROR: Out of nutrient distillation
-enderio.remoteinv.chat.notloaded.client=ERROR: Target is not loaded client-side (not yet implemented)
 enderio.remoteinv.chat.error=ERROR: Technical error, see log
 
 item.itemRemoteInvAccessbasic.name=Inventory Panel Remote
-item.itemRemoteInvAccessbasic.tooltip.detailed.line1=Allows you to access an Inventory Panel from up to 10 chunks away.
+item.itemRemoteInvAccessbasic.tooltip.detailed.line1=Allows you to access an Inventory Panel from up to 5 chunks away.
 item.itemRemoteInvAccessbasic.tooltip.detailed.line2=Crouch-Right-Click a panel to bind the remote to it.
 item.itemRemoteInvAccessbasic.tooltip.detailed.line3=Uses Nutrient Distillation to open a connection and RF to keep it open.
 
@@ -1400,4 +1410,7 @@ item.itemRemoteInvAccessadvanced.tooltip.detailed.line1=Allows you to access an 
 item.itemRemoteInvAccessadvanced.tooltip.detailed.line2=Crouch-Right-Click a panel to bind the remote to it.
 item.itemRemoteInvAccessadvanced.tooltip.detailed.line3=Uses Nutrient Distillation to open a connection and RF to keep it open.
 
-item.itemRemoteInvAccessender.name=Not yet implemented
+item.itemRemoteInvAccessender.name=Ender Inventory Panel Remote
+item.itemRemoteInvAccessender.tooltip.detailed.line1=Allows you to access an Inventory Panel from anywhere.
+item.itemRemoteInvAccessender.tooltip.detailed.line2=Crouch-Right-Click a panel to bind the remote to it.
+item.itemRemoteInvAccessender.tooltip.detailed.line3=Uses Nutrient Distillation to open a connection and RF to keep it open.

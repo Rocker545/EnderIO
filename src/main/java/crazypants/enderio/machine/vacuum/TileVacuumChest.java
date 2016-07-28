@@ -6,6 +6,7 @@ import javax.annotation.Nullable;
 
 import com.enderio.core.client.render.BoundingBox;
 import com.enderio.core.common.util.ItemUtil;
+import com.enderio.core.common.util.Util;
 import com.enderio.core.common.vecmath.Vector4f;
 import com.google.common.base.Predicate;
 
@@ -22,6 +23,7 @@ import crazypants.enderio.machine.ranged.IRanged;
 import crazypants.enderio.machine.ranged.RangeParticle;
 import crazypants.enderio.paint.IPaintable;
 import crazypants.enderio.paint.YetaUtil;
+import crazypants.util.MagnetUtil;
 import info.loenwind.autosave.annotations.Storable;
 import info.loenwind.autosave.annotations.Store;
 import info.loenwind.autosave.annotations.Store.StoreFor;
@@ -29,7 +31,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.IProjectile;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -90,13 +91,7 @@ public class TileVacuumChest extends TileEntityEio
 
   @Override
   public boolean apply(@Nullable EntityItem entity) {
-    if (entity == null || entity.isDead) {
-      return false;
-    }
-    if (entity instanceof IProjectile) {
-      return entity.motionY < 0.01;
-    }
-    return true;
+    return MagnetUtil.shouldAttract(getPos(), entity);
   }
 
   private void doHoover() {
@@ -175,22 +170,8 @@ public class TileVacuumChest extends TileEntityEio
   }
 
   @Override
-  public ItemStack decrStackSize(int fromSlot, int amount) {
-    ItemStack fromStack = inv[fromSlot];
-    if (fromStack == null) {
-      return null;
-    }
-    if (fromStack.stackSize <= amount) {
-      inv[fromSlot] = null;
-      return fromStack;
-    }
-    ItemStack result = new ItemStack(fromStack.getItem(), amount, fromStack.getItemDamage());
-    NBTTagCompound tagCompound = fromStack.getTagCompound();
-    if (tagCompound != null) {
-      result.setTagCompound((NBTTagCompound) tagCompound.copy());
-    }
-    fromStack.stackSize -= amount;
-    return result;
+  public ItemStack decrStackSize(int slot, int amount) {
+    return Util.decrStackSize(this, slot, amount);
   }
 
   @Override
