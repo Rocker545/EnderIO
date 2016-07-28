@@ -22,9 +22,9 @@ import net.minecraft.world.World;
 @Storable
 public class TileWirelessCharger extends TileEntityEio implements IInternalPowerReceiver, IWirelessCharger, IPaintable.IPaintableTileEntity {
 
-  public static final int MAX_ENERGY_STORED = 200000;
+  public static final int MAX_ENERGY_STORED = 500000;
   public static final int MAX_ENERGY_IN = 10000;
-  public static final int MAX_ENERGY_OUT = 100000;
+  public static final int MAX_ENERGY_OUT = 250000;
 
   @Store
   int storedEnergyRF;
