@@ -277,6 +277,7 @@ public final class Config {
   public static boolean darkSteelSolarChargeOthers = true;
 
   public static float darkSteelAnvilDamageChance = 0.024f;
+  public static int darkSteelAnvilMaxLevel = 80;
 
   public static float darkSteelLadderSpeedBoost = 0.06f;
 
@@ -483,7 +484,7 @@ public final class Config {
   public static boolean glassConnectToTheirVariants = true;
   public static boolean glassConnectToTheirColorVariants = true;
   
-  public static Rarity enchantmentSoulBoundWeight = Rarity.UNCOMMON;
+  public static Rarity enchantmentSoulBoundRarity = Rarity.VERY_RARE;
   public static boolean enchantmentSoulBoundEnabled = true;
 
   public static boolean telepadLockDimension = true;
@@ -1079,6 +1080,8 @@ public final class Config {
 
     darkSteelAnvilDamageChance = (float) config.get(sectionDarkSteel.name, "darkSteelAnvilDamageChance", darkSteelAnvilDamageChance, "Chance that the dark steel anvil will take damage after repairing something.").getDouble();
 
+    darkSteelAnvilMaxLevel = config.get(sectionDarkSteel.name, "darkSteelAnvilMaxLevel", darkSteelAnvilMaxLevel, "Max cost operation the anvil can perform. Vanilla limit is 40.").getInt(); 
+    
     darkSteelLadderSpeedBoost = (float) config.get(sectionDarkSteel.name, "darkSteelLadderSpeedBoost", darkSteelLadderSpeedBoost, "Speed boost, in blocks per tick, that the DS ladder gives over the vanilla ladder.").getDouble();
 
     hootchPowerPerCycleRF = config.get(sectionPower.name, "hootchPowerPerCycleRF", hootchPowerPerCycleRF,
@@ -1339,10 +1342,10 @@ public final class Config {
         "If false the soul bound enchantment will not be available");
     
     
-    String rareStr = config.get(sectionEnchantments.name, "enchantmentSoulBoundWeight", enchantmentSoulBoundWeight.toString(),
+    String rareStr = config.get(sectionEnchantments.name, "enchantmentSoulBoundWeight", enchantmentSoulBoundRarity.toString(),
         "The rarity of the enchantment. COMMON, UNCOMMON, RARE, VERY_RARE ").getString();
     try {
-      enchantmentSoulBoundWeight = Rarity.valueOf(rareStr);
+      enchantmentSoulBoundRarity = Rarity.valueOf(rareStr);
     } catch (Exception e) {
       Log.warn("Could not set value config entry enchantmentWitherArrowRarity Specified value " + rareStr);
       e.printStackTrace();
